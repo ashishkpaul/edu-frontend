@@ -4,6 +4,7 @@ import {hasLocale, NextIntlClientProvider} from "next-intl";
 import {Geist, Geist_Mono} from "next/font/google";
 import {getMessages, getTranslations, setRequestLocale} from "next-intl/server";
 import {notFound} from "next/navigation";
+import {Suspense} from "react";
 import {routing} from "@/i18n/routing";
 import {toOgLocale} from "@/i18n/locale-utils";
 import {getRouteLocale} from "@/i18n/server";
@@ -94,10 +95,12 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
             >
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider>
-                        <Navbar />
-                        {children}
-                        <Footer/>
-                        <Toaster/>
+                        <Suspense>
+                            <Navbar />
+                            {children}
+                            <Footer/>
+                            <Toaster/>
+                        </Suspense>
                     </ThemeProvider>
                 </NextIntlClientProvider>
             </body>

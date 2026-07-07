@@ -6,6 +6,7 @@ const VENDURE_API_URL = process.env.VENDURE_SHOP_API_URL || process.env.NEXT_PUB
 const VENDURE_CHANNEL_TOKEN = process.env.VENDURE_CHANNEL_TOKEN || process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN || '__default_channel__';
 const VENDURE_AUTH_TOKEN_HEADER = process.env.VENDURE_AUTH_TOKEN_HEADER || 'vendure-auth-token';
 const VENDURE_CHANNEL_TOKEN_HEADER = process.env.VENDURE_CHANNEL_TOKEN_HEADER || 'vendure-token';
+const SAA9VI_CHANNEL_TOKEN_HEADER = 'hi7e4lgf79pn1txrwlk7';
 
 if (!VENDURE_API_URL) {
     throw new Error('VENDURE_SHOP_API_URL or NEXT_PUBLIC_VENDURE_SHOP_API_URL environment variable is not set');
@@ -33,6 +34,21 @@ function extractAuthToken(headers: Headers): string | null {
     return headers.get(VENDURE_AUTH_TOKEN_HEADER);
 }
 
+/**
+ * Read the channel token from the x-saa9vi-channel-token header set by middleware.
+ * Uses next/headers() which is only available in Server Components and Route Handlers.
+ * Falls back to null if called outside a request context (e.g., build time).
+ */
+async function getChannelTokenFromHeaders(): Promise<string | null> {
+    try {
+        const { headers } = await import('next/headers');
+        const h = await headers();
+        return h.get(SAA9VI_CHANNEL_TOKEN_HEADER);
+    } catch {
+        // next/headers() throws if called outside a request context
+        return null;
+    }
+}
 
 /**
  * Execute a GraphQL query against the Vendure API
@@ -68,8 +84,13 @@ export async function query<TResult, TVariables>(
         headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    // Set the channel token header (use provided channelToken or default)
-    headers[VENDURE_CHANNEL_TOKEN_HEADER] = channelToken || VENDURE_CHANNEL_TOKEN;
+    // Resolve channel token with this priority:
+    // 1. Explicitly provided channelToken option (bypasses header check - safe for cached functions)
+    // 2. x-saa9vi-channel-token header set by middleware (custom-domain academies)
+    // 3. VENDURE_CHANNEL_TOKEN env var (local dev / preview deployments)
+    const headerChannelToken = channelToken ?? (await getChannelTokenFromHeaders());
+    const resolvedChannelToken = headerChannelToken || VENDURE_CHANNEL_TOKEN;
+    headers[VENDURE_CHANNEL_TOKEN_HEADER] = resolvedChannelToken;
 
     const url = new URL(VENDURE_API_URL!);
     if (languageCode) {

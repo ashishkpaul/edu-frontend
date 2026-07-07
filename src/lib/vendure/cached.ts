@@ -1,44 +1,31 @@
-import {cacheLife, cacheTag} from 'next/cache';
 import {query} from './api';
 import {GetActiveChannelQuery, GetAvailableCountriesQuery, GetTopCollectionsQuery} from './queries';
 
+const VENDURE_CHANNEL_TOKEN = process.env.VENDURE_CHANNEL_TOKEN || process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN || '__default_channel__';
+
 /**
- * Get the active channel with caching enabled.
- * Channel configuration rarely changes, so we cache it for 1 hour.
+ * Get the active channel without caching.
  * Channel config is language-independent, so no locale parameter needed.
  */
-export async function getActiveChannelCached() {
-    'use cache';
-    cacheLife('hours');
-
-    const result = await query(GetActiveChannelQuery);
+export async function getActiveChannelCached(channelToken = VENDURE_CHANNEL_TOKEN) {
+    const result = await query(GetActiveChannelQuery, undefined, {channelToken});
     return result.data.activeChannel;
 }
 
 /**
- * Get available countries with caching enabled.
- * Countries list rarely changes, so we cache it with max duration.
+ * Get available countries without caching.
  * Country names are translatable, so locale is required.
  */
-export async function getAvailableCountriesCached(locale: string) {
-    'use cache';
-    cacheLife('max');
-    cacheTag(`countries-${locale}`);
-
-    const result = await query(GetAvailableCountriesQuery, undefined, {languageCode: locale});
+export async function getAvailableCountriesCached(locale: string, channelToken = VENDURE_CHANNEL_TOKEN) {
+    const result = await query(GetAvailableCountriesQuery, undefined, {languageCode: locale, channelToken});
     return result.data.availableCountries || [];
 }
 
 /**
- * Get top-level collections with caching enabled.
- * Collections rarely change, so we cache them for 1 day.
+ * Get top-level collections without caching.
  * Collection names are translatable, so locale is required.
  */
-export async function getTopCollections(locale: string) {
-    'use cache';
-    cacheLife('days');
-    cacheTag(`collections-${locale}`);
-
-    const result = await query(GetTopCollectionsQuery, undefined, {languageCode: locale});
+export async function getTopCollections(locale: string, channelToken = VENDURE_CHANNEL_TOKEN) {
+    const result = await query(GetTopCollectionsQuery, undefined, {languageCode: locale, channelToken});
     return result.data.collections.items;
 }
