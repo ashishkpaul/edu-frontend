@@ -8,6 +8,8 @@ import { Link } from '@/i18n/navigation';
 import {ArrowRight} from "lucide-react";
 import {getTranslations} from 'next-intl/server';
 
+const VENDURE_CHANNEL_TOKEN = process.env.VENDURE_CHANNEL_TOKEN || process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN || '__default_channel__';
+
 async function getFeaturedCollectionProducts(currencyCode: string) {
     'use cache'
     cacheLife('days')
@@ -26,7 +28,7 @@ async function getFeaturedCollectionProducts(currencyCode: string) {
             skip: 0,
             groupByProduct: true
         }
-    }, {languageCode: locale, currencyCode});
+    }, {languageCode: locale, currencyCode, channelToken: VENDURE_CHANNEL_TOKEN});
 
     return result.data.search.items;
 }
