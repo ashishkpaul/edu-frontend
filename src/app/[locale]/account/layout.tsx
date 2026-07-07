@@ -8,12 +8,13 @@ export const metadata: Metadata = {
 };
 
 const navItems = [
+    {href: '/account/learning', labelKey: 'learning', icon: 'BookOpen'},
     {href: '/account/orders', labelKey: 'orders', icon: 'Package'},
     {href: '/account/addresses', labelKey: 'addresses', icon: 'MapPin'},
     {href: '/account/profile', labelKey: 'profile', icon: 'User'},
 ];
 
-export default async function AccountLayout({children}: LayoutProps<'/[locale]/account'>) {
+export default async function AccountLayout({children}: {children: React.ReactNode}) {
     return (
         <div className="container mx-auto px-4 py-30">
             {/* Mobile: horizontal tab bar */}

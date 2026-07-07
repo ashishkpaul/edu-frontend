@@ -453,3 +453,64 @@ export const SetCustomerForOrderMutation = graphql(`
         }
     }
 `);
+
+// ─── Saa9vi-specific mutations ──────────────────────────────────────────
+
+export const RegisterForTrialMutation = graphql(`
+    mutation RegisterForTrial($sessionId: ID!) {
+        registerForTrial(sessionId: $sessionId) {
+            id
+            sessionId
+            sessionTitle
+            status
+            registeredAt
+        }
+    }
+`);
+
+export const BbbJoinRoomMutation = graphql(`
+    mutation BbbJoinRoom($roomId: ID!, $participantName: String!) {
+        bbbJoinRoom(roomId: $roomId, participantName: $participantName) {
+            status
+            joinUrl
+        }
+    }
+`);
+
+export const SubmitProductReviewMutation = graphql(`
+    mutation SubmitProductReview($input: SubmitProductReviewInput!) {
+        submitProductReview(input: $input) {
+            id
+            summary
+            body
+            rating
+            authorName
+            createdAt
+        }
+    }
+`);
+
+export const VoteOnReviewMutation = graphql(`
+    mutation VoteOnReview($id: ID!, $vote: Boolean!) {
+        voteOnReview(id: $id, vote: $vote) {
+            id
+            upvotes
+            downvotes
+        }
+    }
+`);
+
+export const StartScheduledSessionMutation = graphql(`
+    mutation StartScheduledSession($sessionId: ID!) {
+        startScheduledSession(sessionId: $sessionId) {
+            id
+            title
+            startTime
+            endTime
+            status
+            trainerName
+            activeMeetingId
+            joinUrl
+        }
+    }
+`);

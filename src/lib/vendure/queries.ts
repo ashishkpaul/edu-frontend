@@ -1,5 +1,6 @@
 import { graphql } from '@/graphql';
-import { ActiveCustomerFragment, ProductCardFragment } from './fragments';
+import { ActiveCustomerFragment, ProductCardFragment, TenantProfileFragment, InstructorCardFragment, SessionCardFragment, ReviewFragment, CmsBannerFragment } from './fragments';
+// Note: GetInstructorProfilesQuery uses inline fields matching MarketplaceInstructor since it's a different type
 
 export const GetTopCollectionsQuery = graphql(`
     query GetTopCollections {
@@ -436,3 +437,171 @@ export const GetCollectionProductsQuery = graphql(`
         }
     }
 `, [ProductCardFragment]);
+
+// ─── Saa9vi-specific queries ────────────────────────────────────────────
+
+export const GetTenantProfileQuery = graphql(`
+    query GetTenantProfile {
+        tenantProfile {
+            ...TenantProfileFields
+        }
+    }
+`, [TenantProfileFragment]);
+
+export const GetCmsPageQuery = graphql(`
+    query GetCmsPage($slug: String!) {
+        cmsPage(slug: $slug) {
+            slug
+            title
+            metaDescription
+            isPublished
+            sections
+        }
+    }
+`);
+
+export const GetCmsBannersQuery = graphql(`
+    query GetCmsBanners($placement: BannerPlacement!) {
+        cmsBanners(placement: $placement) {
+            ...CmsBannerFields
+        }
+    }
+`, [CmsBannerFragment]);
+
+export const GetInstructorProfileQuery = graphql(`
+    query GetInstructorProfile($slug: String!) {
+        instructorProfile(slug: $slug) {
+            ...InstructorCardFields
+        }
+    }
+`, [InstructorCardFragment]);
+
+export const GetInstructorProfilesQuery = graphql(`
+    query GetInstructorProfiles($options: InstructorProfileListOptions) {
+        instructorProfiles(options: $options) {
+            items {
+                ...InstructorCardFields
+            }
+            totalItems
+        }
+    }
+`, [InstructorCardFragment]);
+
+export const GetPublicScheduledSessionsQuery = graphql(`
+    query GetPublicScheduledSessions {
+        publicScheduledSessions {
+            ...SessionCardFields
+        }
+    }
+`, [SessionCardFragment]);
+
+export const GetMyScheduledSessionsQuery = graphql(`
+    query GetMyScheduledSessions {
+        myScheduledSessions {
+            ...SessionCardFields
+        }
+    }
+`, [SessionCardFragment]);
+
+export const GetMyLearningDashboardQuery = graphql(`
+    query GetMyLearningDashboard {
+        myLearningDashboard {
+            courses {
+                id
+                title
+                canJoin
+                joinUrl
+                nextSession {
+                    startsAt
+                    endsAt
+                }
+                instructorName
+                entitlementType
+                entitlementSource
+            }
+        }
+    }
+`);
+
+export const GetBbbRoomStatusQuery = graphql(`
+    query GetBbbRoomStatus($id: ID!) {
+        bbbRoomStatus(id: $id) {
+            id
+            name
+            state
+            currentMeetingId
+        }
+    }
+`);
+
+export const GetProductReviewsQuery = graphql(`
+    query GetProductReviews($slug: String!, $skip: Int, $take: Int) {
+        product(slug: $slug) {
+            id
+            customFields {
+                reviewRating
+                reviewCount
+            }
+            reviews(options: { skip: $skip, take: $take }) {
+                items {
+                    ...ReviewFields
+                }
+                totalItems
+            }
+            reviewsHistogram {
+                bin
+                frequency
+            }
+        }
+    }
+`, [ReviewFragment]);
+
+export const CanReviewProductQuery = graphql(`
+    query CanReviewProduct($productId: ID!) {
+        canReviewProduct(productId: $productId) {
+            eligible
+            reason
+            hasPurchased
+            hasExistingReview
+            eligibleOrderId
+            eligibleOrderLineId
+        }
+    }
+`);
+
+export const GetMarketplaceSearchQuery = graphql(`
+    query GetMarketplaceSearch($input: MarketplaceSearchInput!) {
+        marketplaceSearch(input: $input) {
+            sessions {
+                id
+                productVariantId
+                channelToken
+                title
+                startTime
+                endTime
+                priceInPaise
+                academyName
+                academySlug
+                instructorName
+                subjectTags
+                bayesianRating
+                isSponsored
+            }
+            instructors {
+                id
+                channelId
+                channelToken
+                name
+                bio
+                slug
+                photoUrl
+                subjectTags
+                reviewRating
+                academyName
+                academySlug
+            }
+            totalSessions
+            totalInstructors
+        }
+    }
+`);

@@ -1,4 +1,4 @@
-import {routing, type Locale} from './routing';
+import type {Locale} from './routing';
 
 const OG_LOCALE_MAP: Record<Locale, string> = { en: 'en_US', de: 'de_DE' };
 const INTL_LOCALE_MAP: Record<Locale, string> = { en: 'en-US', de: 'de-DE' };
