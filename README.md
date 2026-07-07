@@ -4,18 +4,17 @@
   </a>
 </p>
 <h1 align="center">
-  Vendure Next.js Storefront Starter
+  Saa9vi Academy Storefront
 </h1>
 <h3 align="center">
-    A Next.js 16 storefront starter for Vendure headless commerce
+    A Next.js 16 storefront for Saa9vi Academy Platform
 </h3>
 <p align="center">
- Use as a foundation to build upon, take inspiration from, or learn the ergonomics of the Vendure Shop API.
+A customized Next.js 16 storefront built on Vendure headless commerce, featuring BBB integration, marketplace, and learning dashboard.
 </p>
 <h4 align="center">
-  <a href="https://next.vendure.io">Demo</a> |
-  <a href="https://docs.vendure.io">Documentation</a> |
-  <a href="https://vendure.io">Website</a>
+  <a href="https://saa9vi.com">Website</a> |
+  <a href="https://docs.vendure.io">Vendure Documentation</a>
 </h4>
 
 ## Features
@@ -30,12 +29,23 @@
 - Profile management (name, email, password)
 - Address management (create, update, delete, set default)
 - Order history with pagination & detailed order views
+- **Learning Dashboard** - View enrolled courses and join live sessions
 
 **Product Browsing**
 - Collections & featured products
 - Product detail pages with variants & galleries
 - Full-text search with faceted filtering
 - Pagination & sorting
+
+**Marketplace**
+- Browse courses and instructors across academies
+- Academy-specific subdomains (e.g., `academy.saa9vi.com`)
+- Sponsored session highlighting
+
+**BigBlueButton Integration**
+- Join live virtual classrooms
+- Session scheduling and enrollment
+- Real-time meeting links
 
 **Shopping Cart**
 - Add/remove items, adjust quantities
@@ -60,7 +70,21 @@
 
 ## Getting Started
 
-First, run the development server:
+First, set up the environment variables:
+
+```bash
+cp .env.example .env
+```
+
+The `.env` file should contain:
+```
+VENDURE_SHOP_API_URL=http://localhost:3000/shop-api
+VENDURE_CHANNEL_TOKEN=__default_channel__
+NEXT_PUBLIC_SITE_URL=http://localhost:3001
+REVALIDATION_SECRET=your-secure-random-string-here
+```
+
+Then run the development server:
 
 ```bash
 npm run dev
@@ -68,18 +92,27 @@ npm run dev
 
 Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/[locale]/           # Main Next.js app with internationalization
+│   ├── account/           # Customer account pages
+│   │   └── learning/      # Learning dashboard for enrolled courses
+│   ├── marketplace/       # Course marketplace across academies
+│   ├── instructor/[slug]/   # Instructor profile pages
+│   └── ...
+├── lib/vendure/           # Vendure API client utilities
+├── components/            # React components
+└── i18n/                # Internationalization setup
+```
 
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
 
 - [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- [Vendure Documentation](https://docs.vendure.io) - learn about Vendure e-commerce framework.
 
 ## Deploy on Vercel
 
