@@ -1,4 +1,4 @@
-import { query } from '@/lib/vendure/api';
+import { queryPublic } from '@/lib/vendure/api';
 import { GetMarketplaceSearchQuery } from '@/lib/vendure/queries';
 import { getRouteLocale } from '@/i18n/server';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ export default async function MarketplacePage({ searchParams }: Props) {
     const locale = await getRouteLocale();
     const params = await searchParams;
 
-    const { data } = await query(
+    const { data } = await queryPublic(
         GetMarketplaceSearchQuery,
         {
             input: {

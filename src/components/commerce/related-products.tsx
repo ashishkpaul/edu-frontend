@@ -1,6 +1,7 @@
 import { ProductCarousel } from "@/components/commerce/product-carousel";
 import { getRouteLocale } from "@/i18n/server";
 import { cacheLife, cacheTag } from "next/cache";
+import {getChannelToken} from '@/lib/vendure/channel';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 import { query } from "@/lib/vendure/api";
 import { GetCollectionProductsQuery } from "@/lib/vendure/queries";
@@ -18,8 +19,9 @@ async function getRelatedProducts(collectionSlug: string, currentProductId: stri
     cacheLife('hours')
 
     const locale = await getRouteLocale();
-    cacheTag(`related-products-${collectionSlug}-${locale}-${currencyCode}`);
-    cacheTag('products');
+    const channelToken = getChannelToken();
+    cacheTag(`related-products-${collectionSlug}-${locale}-${currencyCode}-${channelToken}`);
+    cacheTag(`products-${channelToken}`);
 
     const result = await query(GetCollectionProductsQuery, {
         slug: collectionSlug,
@@ -29,7 +31,7 @@ async function getRelatedProducts(collectionSlug: string, currentProductId: stri
             skip: 0,
             groupByProduct: true
         }
-    }, {languageCode: locale, currencyCode});
+    }, {languageCode: locale, currencyCode, channelToken});
 
     // Filter out the current product and limit to 12
     return result.data.search.items

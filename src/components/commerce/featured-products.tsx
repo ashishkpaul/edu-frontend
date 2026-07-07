@@ -1,6 +1,7 @@
 import {ProductCarousel} from "@/components/commerce/product-carousel";
 import {getRouteLocale} from "@/i18n/server";
 import {cacheLife, cacheTag} from "next/cache";
+import {getChannelToken} from '@/lib/vendure/channel';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {query} from "@/lib/vendure/api";
 import {GetCollectionProductsQuery} from "@/lib/vendure/queries";
@@ -8,15 +9,14 @@ import { Link } from '@/i18n/navigation';
 import {ArrowRight} from "lucide-react";
 import {getTranslations} from 'next-intl/server';
 
-const VENDURE_CHANNEL_TOKEN = process.env.VENDURE_CHANNEL_TOKEN || process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN || '__default_channel__';
-
 async function getFeaturedCollectionProducts(currencyCode: string) {
     'use cache'
     cacheLife('days')
 
     const locale = await getRouteLocale();
-    cacheTag(`featured-${locale}-${currencyCode}`);
-    cacheTag('products');
+    const channelToken = getChannelToken();
+    cacheTag(`featured-${locale}-${currencyCode}-${channelToken}`);
+    cacheTag(`products-${channelToken}`);
 
     // Fetch featured products from a specific collection
     // Replace 'featured' with your actual collection slug
@@ -28,7 +28,7 @@ async function getFeaturedCollectionProducts(currencyCode: string) {
             skip: 0,
             groupByProduct: true
         }
-    }, {languageCode: locale, currencyCode, channelToken: VENDURE_CHANNEL_TOKEN});
+    }, {languageCode: locale, currencyCode, channelToken});
 
     return result.data.search.items;
 }

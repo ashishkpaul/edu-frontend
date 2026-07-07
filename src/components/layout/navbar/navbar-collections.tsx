@@ -1,5 +1,6 @@
 import {getRouteLocale} from '@/i18n/server';
 import {cacheLife, cacheTag} from 'next/cache';
+import {getChannelToken} from '@/lib/vendure/channel';
 import {getTopCollections} from '@/lib/vendure/cached';
 import {
     NavigationMenu,
@@ -13,9 +14,10 @@ export async function NavbarCollections() {
     cacheLife('days');
 
     const locale = await getRouteLocale();
-    cacheTag(`navbar-collections-${locale}`);
+    const channelToken = getChannelToken();
+    cacheTag(`navbar-collections-${locale}-${channelToken}`);
 
-    const collections = await getTopCollections(locale);
+    const collections = await getTopCollections(locale, channelToken);
 
     return (
         <NavigationMenu>

@@ -8,6 +8,7 @@ import { FacetFilters } from '@/components/commerce/facet-filters';
 import { ProductGridSkeleton } from '@/components/shared/product-grid-skeleton';
 import { buildSearchInput, getCurrentPage } from '@/lib/search-helpers';
 import { cacheLife, cacheTag } from 'next/cache';
+import { getChannelToken } from '@/lib/vendure/channel';
 import {
     Breadcrumb,
     BreadcrumbList,
@@ -33,15 +34,16 @@ async function getCollectionProducts(slug: string, searchParams: { [key: string]
     cacheLife('hours');
 
     const locale = await getRouteLocale();
-    cacheTag(`collection-${slug}-${locale}-${currencyCode}`);
-    cacheTag('collection');
+    const channelToken = getChannelToken();
+    cacheTag(`collection-${slug}-${locale}-${currencyCode}-${channelToken}`);
+    cacheTag(`collection-${channelToken}`);
 
     return query(SearchProductsQuery, {
         input: buildSearchInput({
             searchParams,
             collectionSlug: slug
         })
-    }, {languageCode: locale, currencyCode});
+    }, {languageCode: locale, currencyCode, channelToken});
 }
 
 async function getCollectionMetadata(slug: string) {
@@ -49,12 +51,13 @@ async function getCollectionMetadata(slug: string) {
     cacheLife('hours');
 
     const locale = await getRouteLocale();
-    cacheTag(`collection-meta-${slug}-${locale}`);
+    const channelToken = getChannelToken();
+    cacheTag(`collection-meta-${slug}-${locale}-${channelToken}`);
 
     return query(GetCollectionProductsQuery, {
         slug,
         input: { take: 0, collectionSlug: slug, groupByProduct: true },
-    }, {languageCode: locale});
+    }, {languageCode: locale, channelToken});
 }
 
 export async function generateMetadata({

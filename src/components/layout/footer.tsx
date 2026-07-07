@@ -1,5 +1,6 @@
 import {getRouteLocale} from '@/i18n/server';
 import {cacheLife, cacheTag} from 'next/cache';
+import {getChannelToken} from '@/lib/vendure/channel';
 import {getTopCollections} from '@/lib/vendure/cached';
 import Image from "next/image";
 import {NavigationLink} from '@/components/shared/navigation-link';
@@ -27,10 +28,11 @@ export async function Footer() {
     cacheLife('days');
 
     const locale = await getRouteLocale();
-    cacheTag(`footer-${locale}`);
+    const channelToken = getChannelToken();
+    cacheTag(`footer-${locale}-${channelToken}`);
 
     const t = await getTranslations({locale, namespace: 'Footer'});
-    const collections = await getTopCollections(locale);
+    const collections = await getTopCollections(locale, channelToken);
 
     return (
         <footer className="border-t border-border mt-auto">

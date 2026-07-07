@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { notFound } from 'next/navigation';
 import { cacheLife, cacheTag } from 'next/cache';
+import { getChannelToken } from '@/lib/vendure/channel';
 import { Truck, RotateCcw, ShieldCheck, Clock } from 'lucide-react';
 import { routing } from '@/i18n/routing';
 import {
@@ -40,10 +41,11 @@ async function getProductData(slug: string, currencyCode: string) {
     cacheLife('hours');
 
     const locale = await getRouteLocale();
-    cacheTag(`product-${slug}-${locale}-${currencyCode}`);
-    cacheTag('products');
+    const channelToken = getChannelToken();
+    cacheTag(`product-${slug}-${locale}-${currencyCode}-${channelToken}`);
+    cacheTag(`products-${channelToken}`);
 
-    return await query(GetProductDetailQuery, {slug}, {languageCode: locale, currencyCode});
+    return await query(GetProductDetailQuery, {slug}, {languageCode: locale, currencyCode, channelToken});
 }
 
 export async function generateMetadata({

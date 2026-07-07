@@ -6,7 +6,7 @@ const VENDURE_API_URL = process.env.VENDURE_SHOP_API_URL || process.env.NEXT_PUB
 const VENDURE_CHANNEL_TOKEN = process.env.VENDURE_CHANNEL_TOKEN || process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN || '__default_channel__';
 const VENDURE_AUTH_TOKEN_HEADER = process.env.VENDURE_AUTH_TOKEN_HEADER || 'vendure-auth-token';
 const VENDURE_CHANNEL_TOKEN_HEADER = process.env.VENDURE_CHANNEL_TOKEN_HEADER || 'vendure-token';
-const SAA9VI_CHANNEL_TOKEN_HEADER = 'hi7e4lgf79pn1txrwlk7';
+const SAA9VI_CHANNEL_TOKEN_HEADER = 'x-saa9vi-channel-token';
 
 if (!VENDURE_API_URL) {
     throw new Error('VENDURE_SHOP_API_URL or NEXT_PUBLIC_VENDURE_SHOP_API_URL environment variable is not set');
@@ -35,7 +35,9 @@ function extractAuthToken(headers: Headers): string | null {
 }
 
 /**
- * Read the channel token from the x-saa9vi-channel-token header set by middleware.
+ * Read the channel token from the x-saa9vi-channel-token header.
+ * In production, this header is set by the reverse proxy (nginx/Cloudflare)
+ * after resolving the hostname via GET /api/resolve-channel.
  * Uses next/headers() which is only available in Server Components and Route Handlers.
  * Falls back to null if called outside a request context (e.g., build time).
  */
@@ -88,9 +90,16 @@ export async function query<TResult, TVariables>(
     // 1. Explicitly provided channelToken option (bypasses header check - safe for cached functions)
     // 2. x-saa9vi-channel-token header set by middleware (custom-domain academies)
     // 3. VENDURE_CHANNEL_TOKEN env var (local dev / preview deployments)
+    //
+    // Special case: channelToken === '' means "no channel token" (used by queryPublic
+    // for cross-tenant queries like marketplace search). Skip the header entirely.
     const headerChannelToken = channelToken ?? (await getChannelTokenFromHeaders());
-    const resolvedChannelToken = headerChannelToken || VENDURE_CHANNEL_TOKEN;
-    headers[VENDURE_CHANNEL_TOKEN_HEADER] = resolvedChannelToken;
+    if (channelToken === '') {
+        // queryPublic — skip channel token header for cross-tenant queries
+    } else {
+        const resolvedChannelToken = headerChannelToken || VENDURE_CHANNEL_TOKEN;
+        headers[VENDURE_CHANNEL_TOKEN_HEADER] = resolvedChannelToken;
+    }
 
     const url = new URL(VENDURE_API_URL!);
     if (languageCode) {
@@ -131,6 +140,21 @@ export async function query<TResult, TVariables>(
         data: result.data,
         ...(newToken && {token: newToken}),
     };
+}
+
+/**
+ * Execute a GraphQL query WITHOUT sending a channel token header.
+ * Used for cross-tenant queries like marketplace search where the
+ * channel token would leak tenant context into a tenant-agnostic query.
+ */
+export async function queryPublic<TResult, TVariables>(
+    document: TadaDocumentNode<TResult, TVariables>,
+    ...[variables, options]: TVariables extends Record<string, never>
+        ? [variables?: TVariables, options?: VendureRequestOptions]
+        : [variables: TVariables, options?: VendureRequestOptions]
+): Promise<{ data: TResult; token?: string }> {
+    // @ts-expect-error - Complex conditional type inference, runtime behavior is correct
+    return query(document, variables, {...options, channelToken: ''});
 }
 
 /**
