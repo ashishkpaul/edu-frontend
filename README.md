@@ -100,6 +100,8 @@ Key environment variables:
 | `REDIS_PORT` | No | `6379` | Redis port |
 | `REDIS_PASSWORD` | No | — | Redis password |
 
+See `.env.example` for additional, less commonly needed overrides (public URL/channel variants for client-side use, custom header names).
+
 ### Run Development Server
 
 ```bash
@@ -112,46 +114,36 @@ Open [http://localhost:3001](http://localhost:3001) with your browser to see the
 
 ### Multi-Tenancy (Channel Resolution)
 
-This storefront serves multiple academies from a single deployment. Each academy is a Vendure **Channel**, identified by a channel token.
+This storefront serves multiple academies from a single deployment. Each academy is a Vendure **Channel**, identified by a channel token, and the storefront never trusts a channel token that didn't come from its own reverse proxy.
 
-```
-┌─────────────┐     ┌──────────────────┐     ┌──────────────┐
-│  Browser     │────▶│  nginx/CF Worker │────▶│  Next.js     │
-│              │     │                  │     │  Storefront  │
-│ Host:        │     │ 1. Resolve       │     │              │
-│ academy-a    │     │    hostname via   │     │  x-saa9vi-   │
-│ .example.com │     │    /api/resolve-  │     │  channel-    │
-│              │     │    channel        │     │  token header │
-└─────────────┘     │ 2. Strip client   │     │  → query()   │
-                    │    header          │     │  uses it     │
-                    │ 3. Set resolved    │     └──────┬───────┘
-                    │    header          │            │
-                    └──────────────────┘     ┌───────┴────────┐
-                                             │  Vendure API   │
-                                             │  (channel-     │
-                                             │   scoped data) │
-                                             └────────────────┘
-```
+**Request flow for a custom-domain academy:**
+
+1. Browser requests `https://academy-a.example.com/...`
+2. The reverse proxy (nginx or a Cloudflare Worker) sits in front of Next.js and:
+   - resolves the hostname by calling `GET /api/resolve-channel?hostname=academy-a.example.com`
+   - **strips** any `x-saa9vi-channel-token` header the client may have sent (trust boundary — see [Deployment](#deployment))
+   - sets the resolved token as `x-saa9vi-channel-token` on the request it forwards to Next.js
+3. Next.js reads that header in `lib/vendure/api.ts` and scopes every Vendure Shop API call — and every cache tag — to that channel.
 
 **Channel token resolution priority** (in `src/lib/vendure/api.ts`):
-1. Explicit `channelToken` option passed to `query()` (used by cached functions)
-2. `x-saa9vi-channel-token` header set by reverse proxy (production multi-tenancy)
-3. `VENDURE_CHANNEL_TOKEN` env var (local dev / preview deployments)
+1. Explicit `channelToken` argument passed to `query()` (used by cached functions — see below)
+2. `x-saa9vi-channel-token` header set by the reverse proxy (production multi-tenancy)
+3. `VENDURE_CHANNEL_TOKEN` env var (local dev / preview deployments with no custom domain)
 
 ### Caching Strategy (Next.js 16 `'use cache'`)
 
-All data-fetching functions use Next.js 16's `'use cache'` directive with explicit `cacheTag()` for granular revalidation. The channel token is a required dimension in every cache tag to prevent cross-tenant cache leaks.
+All data-fetching functions use Next.js 16's `'use cache'` directive with explicit `cacheTag()` for granular revalidation. The channel token is a required dimension in every cache tag, so cached data can never leak across tenants.
 
-**Pattern** (applied consistently across all 7 cached call sites):
+`'use cache'` functions can't call `next/headers()` (a Next.js 16 constraint), so the channel token has to be resolved *before* entering the cached scope, then passed in as a plain argument:
 
 ```ts
-// Dynamic outer function — resolves per-request channel token
+// Dynamic outer function — resolves the per-request channel token
 export async function Page() {
     const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
     return CachedInner(channelToken);
 }
 
-// Cached inner function — never calls next/headers()
+// Cached inner function — never calls next/headers() itself
 async function CachedInner(channelToken: string) {
     'use cache';
     cacheLife('hours');
@@ -160,7 +152,7 @@ async function CachedInner(channelToken: string) {
 }
 ```
 
-This split is required because `'use cache'` functions cannot call `next/headers()` (Next.js 16 constraint). The channel token must be resolved in the dynamic outer scope and passed as a plain argument.
+This split is applied consistently across every cached data-fetching function in the codebase — product and collection pages, featured/related product rails, and the footer/navbar collection lists. When adding a new cached function that needs channel-scoped data, follow the same pattern rather than resolving the token inside the `'use cache'` scope.
 
 ### Project Structure
 
@@ -225,6 +217,8 @@ On-demand cache revalidation. Called by Vendure webhooks when data changes.
    - Strip any client-supplied `x-saa9vi-channel-token` header
    - Set the resolved `x-saa9vi-channel-token` header on the upstream request
 
+   This header-stripping step is the whole trust model — without it, a request that reaches the Next.js origin directly (bypassing the proxy) can set its own `x-saa9vi-channel-token` and be served as any tenant. The proxy config for this hasn't been written yet; see [Known Limitations](#known-limitations).
+
 2. **Redis** must be populated with hostname→channelToken mappings:
    ```
    SET channel-token:academy-a.example.com academy-a-token
@@ -239,22 +233,13 @@ The easiest way to deploy is the [Vercel Platform](https://vercel.com/new?utm_me
 
 > **Note:** For multi-tenancy on Vercel, the reverse-proxy layer must be handled by Cloudflare (or similar) in front of Vercel, since Vercel's Edge Network doesn't support custom nginx configuration.
 
-## Assessment Notes
+## Known Limitations
 
-### Multi-Tenancy Channel Resolution — Implementation Review
+- **`getActiveChannelCached()` / `getAvailableCountriesCached()`** (`lib/vendure/cached.ts`) still resolve their channel token from the env-var fallback rather than the per-request header. Needs the same dynamic-outer/cached-inner split already used for product, collection, and layout data.
+- **`cart.tsx`'s `'use cache: private'` block** tags only with `cacheTag('cart')` — no channel dimension. Lower risk than the items above since private cache scope is already per-user, but should be aligned with the rest of the caching strategy for consistency.
+- **The reverse-proxy config** (nginx or a Cloudflare Worker) that calls `/api/resolve-channel` and enforces the client-header-stripping trust boundary described in [Deployment](#deployment) doesn't exist yet in this repo. This codebase implements its side of the contract and assumes the header arrives pre-verified; the proxy itself is external infrastructure that still needs to be written and deployed.
 
-The core fix for multi-tenancy is correct: resolve the real per-request channel token in the **outer, dynamic** part of each page/component (where `next/headers()` is legal), then pass it down as a plain argument into the `'use cache'` function, which never resolves anything itself. This satisfies Next.js 16's constraint that `'use cache'` functions cannot call `next/headers()`.
-
-**What was fixed:**
-- All 7 cached call sites (`product`, `collection` ×2 functions, `featured-products`, `related-products`, `footer`, `mobile-nav-wrapper`, `navbar-collections`) now pass the header-resolved channel token as an explicit parameter
-- Cache tags include the real channel token, preventing cross-tenant cache leaks
-- `getChannelToken()` is correctly demoted to the local-dev/no-header fallback
-- The `Footer`/`MobileNavWrapper`/`NavbarCollections` split into a thin dynamic outer function wrapping a `'use cache'`-tagged inner function is a legitimate Next.js 16 composition pattern
-
-**Known stragglers (lower priority):**
-- `getActiveChannelCached()` / `getAvailableCountriesCached()` in `cached.ts` still default to the env var — same mechanical fix, less visible impact per-tenant
-- `cart.tsx`'s `'use cache: private'` block tags with just `cacheTag('cart')`, no channel dimension — private scope limits blast radius
-- The nginx/Cloudflare Worker config that calls `/api/resolve-channel` and strips client-supplied headers is infrastructure-as-comment, not yet written
+Update this list as items are resolved — it's meant to track real open work, not a historical record.
 
 ## Learn More
 
