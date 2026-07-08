@@ -1,0 +1,42 @@
+# Saa9vi multi-tenant storefront — reverse proxy config
+#
+# Resolves each academy's custom domain to a Vendure channel token via
+# GET /api/resolve-channel, and forwards it to the storefront as the
+# x-saa9vi-channel-token header. See README.md § Architecture for the
+# full request-flow explanation.
+#
+# SECURITY NOTE — read before deploying:
+# copy_headers below performs a Set (overwrite), not an Add. Because
+# /api/resolve-channel ALWAYS returns the x-saa9vi-channel-token header —
+# to the real token, or to an empty string when there's no match — the
+# overwrite always happens, on every request, regardless of whether a
+# tenant was found. There is no code path where a client-supplied
+# x-saa9vi-channel-token survives to the upstream request. Do not "clean
+# up" the always-empty-string branch in route.ts — it's what makes this
+# safe rather than relying on directive ordering.
+#
+# Update the site addresses below to your actual academy domains, or use
+# a wildcard/on-demand TLS block if you're provisioning academies
+# dynamically — see https://caddyserver.com/docs/automatic-https#on-demand-tls
+
+academy-a.example.com, academy-b.example.com {
+	# 1. Resolve the incoming Host header to a channel token by calling
+	#    our own storefront's API, and copy the result onto this request.
+	forward_auth localhost:3001 {
+		uri /api/resolve-channel?hostname={http.request.host}
+
+		# This is the header-copy step. Because the auth response always
+		# includes x-saa9vi-channel-token (real value or ''), this always
+		# overwrites whatever the client sent — see the note above.
+		copy_headers x-saa9vi-channel-token
+	}
+
+	# 2. Proxy to the Next.js storefront. No header manipulation needed
+	#    here — forward_auth already set the correct, trusted value above.
+	reverse_proxy localhost:3001
+}
+
+# Marketplace (cross-tenant, no channel resolution needed)
+marketplace.saa9vi.com {
+	reverse_proxy localhost:3001
+}
