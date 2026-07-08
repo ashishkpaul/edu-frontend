@@ -212,12 +212,12 @@ On-demand cache revalidation. Called by Vendure webhooks when data changes.
 
 ### Production Multi-Tenancy Setup
 
-1. **Reverse proxy** (nginx/Cloudflare Worker) must:
+1. **Reverse proxy** (nginx or Caddy) must:
    - Resolve the incoming hostname via `GET /api/resolve-channel?hostname=...`
    - Strip any client-supplied `x-saa9vi-channel-token` header
    - Set the resolved `x-saa9vi-channel-token` header on the upstream request
 
-   This header-stripping step is the whole trust model — without it, a request that reaches the Next.js origin directly (bypassing the proxy) can set its own `x-saa9vi-channel-token` and be served as any tenant. The proxy config for this hasn't been written yet; see [Known Limitations](#known-limitations).
+   Reference configs for both are in [`deploy/`](./deploy): [`deploy/Caddyfile`](./deploy/Caddyfile) (recommended if you don't already run nginx — uses Caddy's built-in `forward_auth`) and [`deploy/nginx/`](./deploy/nginx) (uses the `njs` module for the subrequest + header injection nginx doesn't do natively). Both rely on `/api/resolve-channel` **always** returning the resolution header — even as `''` when there's no match — so the overwrite step is unconditional rather than depending on directive-ordering assumptions; see the comments in each config for why. **Run through [`deploy/VERIFY.md`](./deploy/VERIFY.md) against staging before trusting either in production** — in particular, confirm a spoofed client header actually gets stripped for an unmapped hostname, which is the one failure mode that matters here.
 
 2. **Redis** must be populated with hostname→channelToken mappings:
    ```
@@ -237,7 +237,6 @@ The easiest way to deploy is the [Vercel Platform](https://vercel.com/new?utm_me
 
 - **`getActiveChannelCached()` / `getAvailableCountriesCached()`** (`lib/vendure/cached.ts`) still resolve their channel token from the env-var fallback rather than the per-request header. Needs the same dynamic-outer/cached-inner split already used for product, collection, and layout data.
 - **`cart.tsx`'s `'use cache: private'` block** tags only with `cacheTag('cart')` — no channel dimension. Lower risk than the items above since private cache scope is already per-user, but should be aligned with the rest of the caching strategy for consistency.
-- **The reverse-proxy config** (nginx or a Cloudflare Worker) that calls `/api/resolve-channel` and enforces the client-header-stripping trust boundary described in [Deployment](#deployment) doesn't exist yet in this repo. This codebase implements its side of the contract and assumes the header arrives pre-verified; the proxy itself is external infrastructure that still needs to be written and deployed.
 
 Update this list as items are resolved — it's meant to track real open work, not a historical record.
 
