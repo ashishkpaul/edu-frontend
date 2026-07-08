@@ -40,8 +40,12 @@ function extractAuthToken(headers: Headers): string | null {
  * after resolving the hostname via GET /api/resolve-channel.
  * Uses next/headers() which is only available in Server Components and Route Handlers.
  * Falls back to null if called outside a request context (e.g., build time).
+ *
+ * Export this for use in page-level channel resolution before calling cached functions.
+ * The cached functions themselves must NOT call this (next/headers() is forbidden
+ * inside 'use cache' scopes).
  */
-async function getChannelTokenFromHeaders(): Promise<string | null> {
+export async function getChannelTokenFromHeaders(): Promise<string | null> {
     try {
         const { headers } = await import('next/headers');
         const h = await headers();

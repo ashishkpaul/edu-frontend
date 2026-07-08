@@ -3,18 +3,17 @@ import {getRouteLocale} from "@/i18n/server";
 import {cacheLife, cacheTag} from "next/cache";
 import {getChannelToken} from '@/lib/vendure/channel';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
-import {query} from "@/lib/vendure/api";
+import {query, getChannelTokenFromHeaders} from "@/lib/vendure/api";
 import {GetCollectionProductsQuery} from "@/lib/vendure/queries";
 import { Link } from '@/i18n/navigation';
 import {ArrowRight} from "lucide-react";
 import {getTranslations} from 'next-intl/server';
 
-async function getFeaturedCollectionProducts(currencyCode: string) {
+async function getFeaturedCollectionProducts(currencyCode: string, channelToken: string) {
     'use cache'
     cacheLife('days')
 
     const locale = await getRouteLocale();
-    const channelToken = getChannelToken();
     cacheTag(`featured-${locale}-${currencyCode}-${channelToken}`);
     cacheTag(`products-${channelToken}`);
 
@@ -37,8 +36,9 @@ async function getFeaturedCollectionProducts(currencyCode: string) {
 export async function FeaturedProducts() {
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
     const t = await getTranslations({locale, namespace: 'Product'});
-    const products = await getFeaturedCollectionProducts(currencyCode);
+    const products = await getFeaturedCollectionProducts(currencyCode, channelToken);
 
     return (
         <div>

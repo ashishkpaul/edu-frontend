@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Link } from '@/i18n/navigation';
-import { query } from '@/lib/vendure/api';
+import { query, getChannelTokenFromHeaders } from '@/lib/vendure/api';
 import { GetProductDetailQuery } from '@/lib/vendure/queries';
 import { ProductImageCarousel } from '@/components/commerce/product-image-carousel';
 import { ProductInfo } from '@/components/commerce/product-info';
@@ -36,12 +36,11 @@ import {toOgLocale} from '@/i18n/locale-utils';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getRouteLocale} from '@/i18n/server';
 
-async function getProductData(slug: string, currencyCode: string) {
+async function getProductData(slug: string, currencyCode: string, channelToken: string) {
     'use cache';
     cacheLife('hours');
 
     const locale = await getRouteLocale();
-    const channelToken = getChannelToken();
     cacheTag(`product-${slug}-${locale}-${currencyCode}-${channelToken}`);
     cacheTag(`products-${channelToken}`);
 
@@ -54,7 +53,8 @@ export async function generateMetadata({
     const { slug } = await params;
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
-    const result = await getProductData(slug, currencyCode);
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
+    const result = await getProductData(slug, currencyCode, channelToken);
     const product = result.data.product;
 
     const t = await getTranslations({locale, namespace: 'Product'});
@@ -104,7 +104,8 @@ export default async function ProductDetailPage({params, searchParams}: PageProp
     const currencyCode = await getActiveCurrencyCode();
     const t = await getTranslations({locale, namespace: 'Product'});
 
-    const result = await getProductData(slug, currencyCode);
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
+    const result = await getProductData(slug, currencyCode, channelToken);
 
     const product = result.data.product;
 

@@ -1,6 +1,7 @@
 import {getRouteLocale} from '@/i18n/server';
 import {cacheLife, cacheTag} from 'next/cache';
 import {getChannelToken} from '@/lib/vendure/channel';
+import {getChannelTokenFromHeaders} from '@/lib/vendure/api';
 import {getTopCollections} from '@/lib/vendure/cached';
 import Image from "next/image";
 import {NavigationLink} from '@/components/shared/navigation-link';
@@ -23,12 +24,11 @@ async function Copyright() {
     )
 }
 
-export async function Footer() {
+async function FooterInner(channelToken: string) {
     'use cache'
     cacheLife('days');
 
     const locale = await getRouteLocale();
-    const channelToken = getChannelToken();
     cacheTag(`footer-${locale}-${channelToken}`);
 
     const t = await getTranslations({locale, namespace: 'Footer'});
@@ -158,4 +158,9 @@ export async function Footer() {
             </div>
         </footer>
     );
+}
+
+export async function Footer() {
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
+    return FooterInner(channelToken);
 }

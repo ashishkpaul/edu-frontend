@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Link } from '@/i18n/navigation';
-import { query } from '@/lib/vendure/api';
+import { query, getChannelTokenFromHeaders } from '@/lib/vendure/api';
 import { SearchProductsQuery, GetCollectionProductsQuery } from '@/lib/vendure/queries';
 import { ProductGrid } from '@/components/commerce/product-grid';
 import { FacetFilters } from '@/components/commerce/facet-filters';
@@ -29,12 +29,11 @@ import {getActiveCurrencyCode} from '@/lib/currency-server';
 import {getRouteLocale} from '@/i18n/server';
 import {getTranslations} from 'next-intl/server';
 
-async function getCollectionProducts(slug: string, searchParams: { [key: string]: string | string[] | undefined }, currencyCode: string) {
+async function getCollectionProducts(slug: string, searchParams: { [key: string]: string | string[] | undefined }, currencyCode: string, channelToken: string) {
     'use cache';
     cacheLife('hours');
 
     const locale = await getRouteLocale();
-    const channelToken = getChannelToken();
     cacheTag(`collection-${slug}-${locale}-${currencyCode}-${channelToken}`);
     cacheTag(`collection-${channelToken}`);
 
@@ -46,12 +45,11 @@ async function getCollectionProducts(slug: string, searchParams: { [key: string]
     }, {languageCode: locale, currencyCode, channelToken});
 }
 
-async function getCollectionMetadata(slug: string) {
+async function getCollectionMetadata(slug: string, channelToken: string) {
     'use cache';
     cacheLife('hours');
 
     const locale = await getRouteLocale();
-    const channelToken = getChannelToken();
     cacheTag(`collection-meta-${slug}-${locale}-${channelToken}`);
 
     return query(GetCollectionProductsQuery, {
@@ -65,7 +63,8 @@ export async function generateMetadata({
 }: PageProps<'/[locale]/collection/[slug]'>): Promise<Metadata> {
     const { slug } = await params;
     const locale = await getRouteLocale();
-    const result = await getCollectionMetadata(slug);
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
+    const result = await getCollectionMetadata(slug, channelToken);
     const collection = result.data.collection;
 
     const t = await getTranslations({locale, namespace: 'Product'});
@@ -118,8 +117,9 @@ export default async function CollectionPage({params, searchParams}: PageProps<'
     const t = await getTranslations({locale, namespace: 'Product'});
     const page = getCurrentPage(searchParamsResolved);
 
-    const productDataPromise = getCollectionProducts(slug, searchParamsResolved, currencyCode);
-    const collectionResult = await getCollectionMetadata(slug);
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
+    const productDataPromise = getCollectionProducts(slug, searchParamsResolved, currencyCode, channelToken);
+    const collectionResult = await getCollectionMetadata(slug, channelToken);
     const collectionName = collectionResult.data.collection?.name ?? slug;
 
     return (

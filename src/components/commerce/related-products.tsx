@@ -3,7 +3,7 @@ import { getRouteLocale } from "@/i18n/server";
 import { cacheLife, cacheTag } from "next/cache";
 import {getChannelToken} from '@/lib/vendure/channel';
 import {getActiveCurrencyCode} from '@/lib/currency-server';
-import { query } from "@/lib/vendure/api";
+import { query, getChannelTokenFromHeaders } from "@/lib/vendure/api";
 import { GetCollectionProductsQuery } from "@/lib/vendure/queries";
 import { readFragment } from "@/graphql";
 import { ProductCardFragment } from "@/lib/vendure/fragments";
@@ -14,12 +14,11 @@ interface RelatedProductsProps {
     currentProductId: string;
 }
 
-async function getRelatedProducts(collectionSlug: string, currentProductId: string, currencyCode: string) {
+async function getRelatedProducts(collectionSlug: string, currentProductId: string, currencyCode: string, channelToken: string) {
     'use cache'
     cacheLife('hours')
 
     const locale = await getRouteLocale();
-    const channelToken = getChannelToken();
     cacheTag(`related-products-${collectionSlug}-${locale}-${currencyCode}-${channelToken}`);
     cacheTag(`products-${channelToken}`);
 
@@ -45,8 +44,9 @@ async function getRelatedProducts(collectionSlug: string, currentProductId: stri
 export async function RelatedProducts({ collectionSlug, currentProductId }: RelatedProductsProps) {
     const locale = await getRouteLocale();
     const currencyCode = await getActiveCurrencyCode();
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
     const t = await getTranslations({locale, namespace: 'Product'});
-    const products = await getRelatedProducts(collectionSlug, currentProductId, currencyCode);
+    const products = await getRelatedProducts(collectionSlug, currentProductId, currencyCode, channelToken);
 
     if (products.length === 0) {
         return null;

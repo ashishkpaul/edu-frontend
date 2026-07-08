@@ -1,6 +1,7 @@
 import {getRouteLocale} from '@/i18n/server';
 import {cacheLife, cacheTag} from 'next/cache';
 import {getChannelToken} from '@/lib/vendure/channel';
+import {getChannelTokenFromHeaders} from '@/lib/vendure/api';
 import {getTopCollections} from '@/lib/vendure/cached';
 import {
     NavigationMenu,
@@ -9,12 +10,11 @@ import {
 } from '@/components/ui/navigation-menu';
 import {NavbarLink} from '@/components/layout/navbar/navbar-link';
 
-export async function NavbarCollections() {
+async function NavbarCollectionsInner(channelToken: string) {
     "use cache";
     cacheLife('days');
 
     const locale = await getRouteLocale();
-    const channelToken = getChannelToken();
     cacheTag(`navbar-collections-${locale}-${channelToken}`);
 
     const collections = await getTopCollections(locale, channelToken);
@@ -32,4 +32,9 @@ export async function NavbarCollections() {
             </NavigationMenuList>
         </NavigationMenu>
     );
+}
+
+export async function NavbarCollections() {
+    const channelToken = (await getChannelTokenFromHeaders()) || getChannelToken();
+    return NavbarCollectionsInner(channelToken);
 }
