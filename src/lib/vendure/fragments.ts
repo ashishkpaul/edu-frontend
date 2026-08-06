@@ -111,3 +111,19 @@ export const CmsBannerFragment = graphql(`
         placement
     }
 `);
+
+export const CmsArticleFragment = graphql(`
+    fragment CmsArticleFields on Article {
+        id
+        title
+        slug
+        excerpt
+        body
+        publishedAt
+        featuredAsset {
+            id
+            preview
+        }
+        tags
+    }
+`);
