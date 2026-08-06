@@ -516,6 +516,7 @@ export const GetMyLearningDashboardQuery = graphql(`
                     endsAt
                 }
                 instructorName
+                isTrial
                 entitlementType
                 entitlementSource
             }
