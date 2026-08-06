@@ -6,6 +6,7 @@ import { ProductImageCarousel } from '@/components/commerce/product-image-carous
 import { ProductInfo } from '@/components/commerce/product-info';
 import { getDisplayOptionGroups } from '@/lib/vendure/product-options';
 import { RelatedProducts } from '@/components/commerce/related-products';
+import ReviewsSection from './reviews-section';
 import {
     Accordion,
     AccordionContent,
@@ -215,6 +216,8 @@ export default async function ProductDetailPage({params, searchParams}: PageProp
                     </Accordion>
                 </div>
             </section>
+
+            <ReviewsSection productId={product.id} productSlug={product.slug} />
 
             {primaryCollection && (
                 <RelatedProducts
