@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { Star, Loader2 } from 'lucide-react';
-import { mutate } from '@/lib/vendure/api';
-import { SubmitProductReviewMutation } from '@/lib/vendure/mutations';
+import { submitReview } from '@/app/[locale]/product/[slug]/reviews-actions';
 
 interface ReviewFormProps {
     productId: string;
@@ -31,24 +30,24 @@ export default function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
         setSubmitting(true);
 
         try {
-            await mutate(SubmitProductReviewMutation, {
-                input: {
-                    productId,
-                    summary,
-                    body,
-                    rating,
-                    authorName: authorName || undefined,
-                },
+            const result = await submitReview({
+                productId,
+                summary,
+                body,
+                rating,
+                authorName: authorName || undefined,
             });
 
-            // Reset form
-            setRating(0);
-            setSummary('');
-            setBody('');
-            setAuthorName('');
-            onSuccess?.();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to submit review');
+            if (result.success) {
+                // Reset form
+                setRating(0);
+                setSummary('');
+                setBody('');
+                setAuthorName('');
+                onSuccess?.();
+            } else {
+                setError(result.error);
+            }
         } finally {
             setSubmitting(false);
         }

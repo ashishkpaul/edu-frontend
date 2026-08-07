@@ -1,16 +1,36 @@
 'use client';
 
 import { Star, ThumbsUp, ThumbsDown, Flag, CheckCircle } from 'lucide-react';
-import type { ReviewFragment } from '@/lib/vendure/fragments';
+import { graphql, FragmentOf, readFragment } from '@/graphql';
+
+// ─── Co-located fragment ─────────────────────────────────────────────────────
+// Exported so callers can spread it into their co-located queries.
+
+export const ReviewCardFragment = graphql(`
+    fragment ReviewCardFields on ProductReview {
+        id
+        summary
+        body
+        rating
+        authorName
+        createdAt
+        verifiedPurchase
+        upvotes
+        downvotes
+    }
+`);
+
+export type Review = FragmentOf<typeof ReviewCardFragment>;
 
 interface ReviewCardProps {
-    review: ReviewFragment;
+    review: Review;
     onVote?: (id: string, vote: boolean) => void;
     onReport?: (id: string) => void;
     showActions?: boolean;
 }
 
-export default function ReviewCard({ review, onVote, onReport, showActions = true }: ReviewCardProps) {
+export default function ReviewCard({ review: reviewProp, onVote, onReport, showActions = true }: ReviewCardProps) {
+    const review = readFragment(ReviewCardFragment, reviewProp);
     const date = new Date(review.createdAt).toLocaleDateString();
 
     return (
@@ -42,7 +62,9 @@ export default function ReviewCard({ review, onVote, onReport, showActions = tru
                 )}
             </div>
 
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{review.body}</p>
+            {review.body && (
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{review.body}</p>
+            )}
 
             <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
