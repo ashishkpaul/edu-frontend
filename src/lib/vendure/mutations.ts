@@ -456,6 +456,16 @@ export const SetCustomerForOrderMutation = graphql(`
 
 // ─── Saa9vi-specific mutations ──────────────────────────────────────────
 
+export const RegisterNewTenantMutation = graphql(`
+    mutation RegisterNewTenant($input: RegisterTenantInput!) {
+        registerNewTenant(input: $input) {
+            channelId
+            channelToken
+            administratorId
+        }
+    }
+`);
+
 export const RegisterForTrialMutation = graphql(`
     mutation RegisterForTrial($sessionId: ID!) {
         registerForTrial(sessionId: $sessionId) {
@@ -511,6 +521,32 @@ export const StartScheduledSessionMutation = graphql(`
             trainerName
             activeMeetingId
             joinUrl
+        }
+    }
+`);
+
+export const ReportReviewMutation = graphql(`
+    mutation ReportReview($input: ReportReviewInput!) {
+        reportReview(input: $input)
+    }
+`);
+
+// ─── Phase 3 — Account Safety mutations ─────────────────────────────────
+
+export const LeaveAcademyMutation = graphql(`
+    mutation LeaveAcademy {
+        leaveAcademy {
+            success
+            message
+        }
+    }
+`);
+
+export const DeleteMyAccountMutation = graphql(`
+    mutation DeleteMyAccount($password: String!) {
+        deleteMyAccount(password: $password) {
+            success
+            message
         }
     }
 `);

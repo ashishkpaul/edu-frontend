@@ -1,5 +1,5 @@
 import { graphql } from '@/graphql';
-import { ActiveCustomerFragment, ProductCardFragment, TenantProfileFragment, InstructorCardFragment, SessionCardFragment, ReviewFragment, CmsBannerFragment } from './fragments';
+import { ActiveCustomerFragment, ProductCardFragment, TenantProfileFragment, InstructorCardFragment, SessionCardFragment, ReviewFragment, CmsBannerFragment, CmsArticleFragment } from './fragments';
 // Note: GetInstructorProfilesQuery uses inline fields matching MarketplaceInstructor since it's a different type
 
 export const GetTopCollectionsQuery = graphql(`
@@ -468,6 +468,25 @@ export const GetCmsBannersQuery = graphql(`
     }
 `, [CmsBannerFragment]);
 
+export const GetCmsArticleQuery = graphql(`
+    query GetCmsArticle($slug: String!) {
+        cmsArticle(slug: $slug) {
+            ...CmsArticleFields
+        }
+    }
+`, [CmsArticleFragment]);
+
+export const GetCmsArticlesQuery = graphql(`
+    query GetCmsArticles($options: ArticleListOptions) {
+        cmsArticles(options: $options) {
+            items {
+                ...CmsArticleFields
+            }
+            totalItems
+        }
+    }
+`, [CmsArticleFragment]);
+
 export const GetInstructorProfileQuery = graphql(`
     query GetInstructorProfile($slug: String!) {
         instructorProfile(slug: $slug) {
@@ -547,7 +566,6 @@ export const GetProductReviewsQuery = graphql(`
                 items {
                     ...ReviewFields
                 }
-                totalItems
             }
             reviewsHistogram {
                 bin
@@ -566,6 +584,39 @@ export const CanReviewProductQuery = graphql(`
             hasExistingReview
             eligibleOrderId
             eligibleOrderLineId
+        }
+    }
+`);
+
+// Note: a "GetMyReviews" (reviewed status) query is intentionally omitted here.
+// The server's pendingReviewRequests resolver only returns status=scheduled records
+// and ignores list filters. A separate reviewed-history endpoint is a Phase 2B
+// enhancement tracked in the roadmap.
+export const GetPendingReviewRequestsQuery = graphql(`
+    query GetPendingReviewRequests {
+        pendingReviewRequests {
+            items {
+                id
+                status
+                scheduledAt
+                sentAt
+                expiresAt
+                reviewToken
+                product {
+                    id
+                    name
+                    slug
+                    featuredAsset {
+                        id
+                        preview
+                    }
+                }
+                order {
+                    id
+                    code
+                }
+            }
+            totalItems
         }
     }
 `);

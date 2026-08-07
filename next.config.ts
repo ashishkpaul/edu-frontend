@@ -6,20 +6,16 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 const nextConfig: NextConfig = {
     cacheComponents: true,
     images: {
-        // This is necessary to display images from your local Vendure instance
         dangerouslyAllowLocalIP: true,
         remotePatterns: [
-            {
-                hostname: 'readonlydemo.vendure.io',
-            },
-            {
-                hostname: 'demo.vendure.io'
-            },
-            {
-                hostname: 'localhost'
-            }
+            { hostname: 'readonlydemo.vendure.io' },
+            { hostname: 'demo.vendure.io' },
+            { hostname: 'localhost' }
         ],
     },
+    // 1. Move it here (Root level of the config object)
+    allowedDevOrigins: ['storefront.meeting.lan'], 
+    
     experimental: {
         rootParams: true
     }

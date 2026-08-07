@@ -1,6 +1,5 @@
 import type {TadaDocumentNode} from 'gql.tada';
 import {print} from 'graphql';
-import {getAuthToken} from '@/lib/auth';
 
 const VENDURE_API_URL = process.env.VENDURE_SHOP_API_URL || process.env.NEXT_PUBLIC_VENDURE_SHOP_API_URL;
 const VENDURE_CHANNEL_TOKEN = process.env.VENDURE_CHANNEL_TOKEN || process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN || '__default_channel__';
@@ -80,9 +79,12 @@ export async function query<TResult, TVariables>(
         ...(fetchOptions?.headers as Record<string, string>),
     };
 
-    // Use the explicitly provided token, or fetch from cookies if useAuthToken is true
+    // Use the explicitly provided token, or fetch from cookies if useAuthToken is true.
+    // getAuthToken is dynamically imported so client components that import this
+    // module don't pull in next/headers (server-only) into the client bundle.
     let authToken = token;
     if (useAuthToken && !authToken) {
+        const {getAuthToken} = await import('@/lib/auth');
         authToken = await getAuthToken();
     }
 
