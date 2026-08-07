@@ -13,6 +13,7 @@ const navItems = [
     {href: '/account/reviews', labelKey: 'reviews', icon: 'Star'},
     {href: '/account/addresses', labelKey: 'addresses', icon: 'MapPin'},
     {href: '/account/profile', labelKey: 'profile', icon: 'User'},
+    {href: '/account/settings', labelKey: 'settings', icon: 'Settings'},
 ];
 
 export default async function AccountLayout({children}: {children: React.ReactNode}) {

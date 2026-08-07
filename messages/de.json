@@ -9,10 +9,12 @@
     "account": "Konto",
     "profile": "Profil",
     "orders": "Bestellungen",
+    "reviews": "Bewertungen",
     "addresses": "Adressen",
     "signIn": "Anmelden",
     "signOut": "Abmelden",
     "greeting": "Hallo, {name}",
+    "settings": "Einstellungen",
     "shoppingCart": "Warenkorb",
     "switchLanguage": "Sprache wechseln",
     "switchCurrency": "Währung wechseln"
@@ -337,6 +339,9 @@
     "updatePassword": "Passwort aktualisieren",
     "passwordUpdated": "Passwort erfolgreich aktualisiert!",
     "myOrders": "Meine Bestellungen",
+    "reviews": {
+      "title": "Meine Bewertungen"
+    },
     "noOrders": "Sie haben noch keine Bestellungen aufgegeben.",
     "orderNumber": "Bestellnummer",
     "date": "Datum",
@@ -416,6 +421,50 @@
       "errorMessage": "Bitte versuchen Sie es später erneut oder kontaktieren Sie den Support, wenn das Problem weiterhin besteht.",
       "verifying": "E-Mail wird bestätigt...",
       "verifyingDesc": "Bitte warten Sie, während wir Ihre E-Mail-Adresse bestätigen."
+    }
+  },
+  "RegisterAcademy": {
+    "title": "Starten Sie Ihre Akademie",
+    "subtitle": "Erstellen Sie in wenigen Minuten Ihre eigene Akademie auf der Saa9vi-Plattform.",
+    "steps": {
+      "business": "Unternehmen",
+      "account": "Konto",
+      "review": "Überprüfung"
+    },
+    "fields": {
+      "businessName": "Akademiename",
+      "contactEmail": "Kontakt-E-Mail",
+      "timezone": "Zeitzone",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "emailAddress": "E-Mail-Adresse",
+      "password": "Passwort",
+      "confirmPassword": "Passwort bestätigen",
+      "adminName": "Administrator"
+    },
+    "placeholders": {
+      "businessName": "z. B. Acme Akademie",
+      "contactEmail": "support@acme.com"
+    },
+    "actions": {
+      "back": "Zurück",
+      "next": "Weiter",
+      "submit": "Akademie erstellen",
+      "submitting": "Wird erstellt..."
+    },
+    "errors": {
+      "businessNameRequired": "Akademiename ist erforderlich",
+      "firstNameRequired": "Vorname ist erforderlich",
+      "lastNameRequired": "Nachname ist erforderlich",
+      "invalidEmail": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+      "passwordMinLength": "Das Passwort muss mindestens 8 Zeichen lang sein",
+      "passwordsMismatch": "Passwörter stimmen nicht überein",
+      "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+    },
+    "success": {
+      "title": "Akademie erstellt!",
+      "message": "Ihre Akademie wurde erstellt. Sie können sich jetzt in Ihr Dashboard einloggen.",
+      "goHome": "Zur Startseite"
     }
   },
   "NotFound": {

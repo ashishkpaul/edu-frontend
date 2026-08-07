@@ -9,10 +9,12 @@
     "account": "Account",
     "profile": "Profile",
     "orders": "Orders",
+    "reviews": "Reviews",
     "addresses": "Addresses",
     "signIn": "Sign in",
     "signOut": "Sign out",
     "greeting": "Hi, {name}",
+    "settings": "Settings",
     "shoppingCart": "Shopping Cart",
     "switchLanguage": "Switch language",
     "switchCurrency": "Switch currency"
@@ -337,6 +339,9 @@
     "updatePassword": "Update Password",
     "passwordUpdated": "Password updated successfully!",
     "myOrders": "My Orders",
+    "reviews": {
+      "title": "My Reviews"
+    },
     "noOrders": "You haven't placed any orders yet.",
     "orderNumber": "Order Number",
     "date": "Date",
@@ -416,6 +421,50 @@
       "errorMessage": "Please try again later or contact support if the problem persists.",
       "verifying": "Verifying Email...",
       "verifyingDesc": "Please wait while we verify your email address."
+    }
+  },
+  "RegisterAcademy": {
+    "title": "Start Your Academy",
+    "subtitle": "Create your own academy on the Saa9vi platform in minutes.",
+    "steps": {
+      "business": "Business",
+      "account": "Account",
+      "review": "Review"
+    },
+    "fields": {
+      "businessName": "Academy Name",
+      "contactEmail": "Contact Email",
+      "timezone": "Timezone",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "emailAddress": "Email Address",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "adminName": "Administrator"
+    },
+    "placeholders": {
+      "businessName": "e.g. Acme Academy",
+      "contactEmail": "support@acme.com"
+    },
+    "actions": {
+      "back": "Back",
+      "next": "Next",
+      "submit": "Create Academy",
+      "submitting": "Creating..."
+    },
+    "errors": {
+      "businessNameRequired": "Academy name is required",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "invalidEmail": "Please enter a valid email address",
+      "passwordMinLength": "Password must be at least 8 characters",
+      "passwordsMismatch": "Passwords don't match",
+      "unexpectedError": "An unexpected error occurred. Please try again."
+    },
+    "success": {
+      "title": "Academy Created!",
+      "message": "Your academy has been created. You can now sign in to your dashboard.",
+      "goHome": "Go to Home"
     }
   },
   "NotFound": {
