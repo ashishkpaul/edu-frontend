@@ -2,30 +2,57 @@ import { queryPublic } from '@/lib/vendure/api';
 import { GetMarketplaceSearchQuery } from '@/lib/vendure/queries';
 import { getRouteLocale } from '@/i18n/server';
 import Link from 'next/link';
+import { Search, Star, MapPin, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+
+const PAGE_SIZE = 20;
 
 interface Props {
-    searchParams: Promise<{ q?: string; subject?: string; city?: string }>;
+    searchParams: Promise<{ q?: string; subject?: string; city?: string; page?: string }>;
 }
 
 export default async function MarketplacePage({ searchParams }: Props) {
     const locale = await getRouteLocale();
     const params = await searchParams;
 
+    const query = params.q ?? '';
+    const subject = params.subject ?? '';
+    const city = params.city ?? '';
+    const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1);
+    const skip = (page - 1) * PAGE_SIZE;
+
     const { data } = await queryPublic(
         GetMarketplaceSearchQuery,
         {
             input: {
-                query: params.q ?? '',
-                subjectTags: params.subject ? [params.subject] : undefined,
-                city: params.city,
-                skip: 0,
-                take: 20,
+                query,
+                subjectTags: subject ? [subject] : undefined,
+                city: city || undefined,
+                skip,
+                take: PAGE_SIZE,
             },
         },
         { languageCode: locale },
     );
 
     const { sessions, instructors, totalSessions, totalInstructors } = data.marketplaceSearch;
+
+    const totalPages = Math.max(1, Math.ceil(totalSessions / PAGE_SIZE));
+    const hasPrev = page > 1;
+    const hasNext = page < totalPages;
+
+    // Build a query-string helper that preserves existing filters
+    const buildHref = (overrides: Record<string, string | undefined>) => {
+        const sp = new URLSearchParams();
+        if (query) sp.set('q', query);
+        if (subject) sp.set('subject', subject);
+        if (city) sp.set('city', city);
+        for (const [key, value] of Object.entries(overrides)) {
+            if (value) sp.set(key, value);
+            else sp.delete(key);
+        }
+        const qs = sp.toString();
+        return `/${locale}/marketplace${qs ? `?${qs}` : ''}`;
+    };
 
     return (
         <div className="container mx-auto px-4 py-12">
@@ -34,14 +61,31 @@ export default async function MarketplacePage({ searchParams }: Props) {
                 Discover academies and sessions across the Saa9vi platform
             </p>
 
-            {/* Search form */}
-            <form className="flex gap-4 mb-8">
+            {/* Search + filters */}
+            <form className="flex flex-col md:flex-row gap-3 mb-8">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                        type="text"
+                        name="q"
+                        defaultValue={query}
+                        placeholder="Search sessions, instructors, academies..."
+                        className="w-full rounded-md border border-input bg-background pl-9 pr-4 py-2 text-sm"
+                    />
+                </div>
                 <input
                     type="text"
-                    name="q"
-                    defaultValue={params.q ?? ''}
-                    placeholder="Search sessions, instructors, academies..."
-                    className="flex-1 rounded-md border border-input bg-background px-4 py-2 text-sm"
+                    name="subject"
+                    defaultValue={subject}
+                    placeholder="Subject (e.g. Math)"
+                    className="rounded-md border border-input bg-background px-4 py-2 text-sm md:w-48"
+                />
+                <input
+                    type="text"
+                    name="city"
+                    defaultValue={city}
+                    placeholder="City"
+                    className="rounded-md border border-input bg-background px-4 py-2 text-sm md:w-40"
                 />
                 <button
                     type="submit"
@@ -50,6 +94,29 @@ export default async function MarketplacePage({ searchParams }: Props) {
                     Search
                 </button>
             </form>
+
+            {/* Active filter chips */}
+            {(subject || city) && (
+                <div className="flex flex-wrap items-center gap-2 mb-6">
+                    {subject && (
+                        <Link
+                            href={buildHref({ subject: undefined })}
+                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                        >
+                            {subject} ×
+                        </Link>
+                    )}
+                    {city && (
+                        <Link
+                            href={buildHref({ city: undefined })}
+                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                        >
+                            <MapPin className="h-3 w-3" />
+                            {city} ×
+                        </Link>
+                    )}
+                </div>
+            )}
 
             {/* Results */}
             <div className="grid lg:grid-cols-3 gap-8">
@@ -65,7 +132,11 @@ export default async function MarketplacePage({ searchParams }: Props) {
                             {sessions.map((session) => (
                                 <div
                                     key={session.id}
-                                    className="rounded-lg border bg-card p-6"
+                                    className={`rounded-lg border bg-card p-6 ${
+                                        session.isSponsored
+                                            ? 'border-yellow-300/60 shadow-sm'
+                                            : ''
+                                    }`}
                                 >
                                     <div className="flex items-start justify-between">
                                         <div>
@@ -80,7 +151,8 @@ export default async function MarketplacePage({ searchParams }: Props) {
                                             )}
                                         </div>
                                         {session.isSponsored && (
-                                            <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-yellow-100 to-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-amber-200">
+                                                <Sparkles className="h-3 w-3" />
                                                 Sponsored
                                             </span>
                                         )}
@@ -92,8 +164,21 @@ export default async function MarketplacePage({ searchParams }: Props) {
                                             </span>
                                         )}
                                         {session.bayesianRating != null && (
-                                            <span className="text-muted-foreground">
-                                                ★ {session.bayesianRating.toFixed(1)}
+                                            <span className="inline-flex items-center gap-1 text-muted-foreground">
+                                                <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                                                {session.bayesianRating.toFixed(1)}
+                                            </span>
+                                        )}
+                                        {session.subjectTags.length > 0 && (
+                                            <span className="flex flex-wrap gap-1">
+                                                {session.subjectTags.slice(0, 3).map((tag) => (
+                                                    <span
+                                                        key={tag}
+                                                        className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))}
                                             </span>
                                         )}
                                     </div>
@@ -105,6 +190,39 @@ export default async function MarketplacePage({ searchParams }: Props) {
                                     </Link>
                                 </div>
                             ))}
+                        </div>
+                    )}
+
+                    {/* Pagination */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-4 mt-8">
+                            <Link
+                                href={buildHref({ page: hasPrev ? String(page - 1) : undefined })}
+                                className={`inline-flex items-center gap-1 rounded-md border border-input px-4 py-2 text-sm font-medium ${
+                                    hasPrev
+                                        ? 'hover:bg-muted'
+                                        : 'pointer-events-none opacity-50'
+                                }`}
+                                aria-disabled={!hasPrev}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                Previous
+                            </Link>
+                            <span className="text-sm text-muted-foreground">
+                                Page {page} of {totalPages}
+                            </span>
+                            <Link
+                                href={buildHref({ page: hasNext ? String(page + 1) : undefined })}
+                                className={`inline-flex items-center gap-1 rounded-md border border-input px-4 py-2 text-sm font-medium ${
+                                    hasNext
+                                        ? 'hover:bg-muted'
+                                        : 'pointer-events-none opacity-50'
+                                }`}
+                                aria-disabled={!hasNext}
+                            >
+                                Next
+                                <ChevronRight className="h-4 w-4" />
+                            </Link>
                         </div>
                     )}
                 </div>
@@ -128,9 +246,22 @@ export default async function MarketplacePage({ searchParams }: Props) {
                                         {instructor.academyName}
                                     </p>
                                     {instructor.reviewRating != null && (
-                                        <p className="text-sm text-muted-foreground mt-1">
-                                            ★ {instructor.reviewRating.toFixed(1)}
+                                        <p className="inline-flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                                            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                                            {instructor.reviewRating.toFixed(1)}
                                         </p>
+                                    )}
+                                    {instructor.subjectTags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                            {instructor.subjectTags.slice(0, 3).map((tag) => (
+                                                <span
+                                                    key={tag}
+                                                    className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground"
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
                                     )}
                                     <Link
                                         href={`https://${instructor.academySlug}.saa9vi.com`}
