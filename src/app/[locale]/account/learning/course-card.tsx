@@ -1,7 +1,6 @@
 'use client';
 
 import { LiveCountdown, SessionStatusBadge, getSessionStatus } from './session-helpers';
-import Link from 'next/link';
 
 interface Course {
     id: string;
@@ -17,10 +16,9 @@ interface Course {
 
 interface CourseCardProps {
     course: Course;
-    locale: string;
 }
 
-export default function CourseCard({ course, locale }: CourseCardProps) {
+export default function CourseCard({ course }: CourseCardProps) {
     const status = course.nextSession
         ? getSessionStatus(course.nextSession.startsAt, course.nextSession.endsAt, course.canJoin)
         : 'ENTITLED';
@@ -59,7 +57,6 @@ export default function CourseCard({ course, locale }: CourseCardProps) {
                         <LiveCountdown
                             startTime={course.nextSession.startsAt}
                             endTime={course.nextSession.endsAt}
-                            canJoin={course.canJoin}
                         />
                     </div>
                     <p>
@@ -76,6 +73,16 @@ export default function CourseCard({ course, locale }: CourseCardProps) {
                     className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
                     Join class
+                </a>
+            ) : course.isTrial === true && !course.joinUrl ? (
+                // Trial CTA — presentational only. No eligibility check here (INV-008).
+                // The server has already confirmed entitlement by including this course
+                // in myLearningDashboard. This button links to the trial registration flow.
+                <a
+                    href={`/product/${course.id}`}
+                    className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
+                >
+                    Start free trial
                 </a>
             ) : course.nextSession ? (
                 <p className="mt-4 text-sm text-muted-foreground">

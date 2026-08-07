@@ -44,7 +44,6 @@ export default async function LearningDashboardPage() {
                         <CourseCard
                             key={course.id}
                             course={course}
-                            locale={locale}
                         />
                     ))}
                 </div>

@@ -64,7 +64,7 @@ export function SessionStatusBadge({ status }: { status: SessionStatus }) {
     );
 }
 
-export function LiveCountdown({ startTime, endTime, canJoin }: { startTime: string; endTime: string; canJoin: boolean }) {
+export function LiveCountdown({ startTime, endTime }: { startTime: string; endTime: string }) {
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
