@@ -4,7 +4,8 @@ import { getRouteLocale } from '@/i18n/server';
 import { getAuthToken } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import CourseCard from './course-card';
+import LearningDashboardClient from './learning-dashboard-client';
+import type { LearningCourse } from './course-card';
 
 // ─── Page component ─────────────────────────────────────────────────────────
 
@@ -22,7 +23,7 @@ export default async function LearningDashboardPage() {
         { useAuthToken: true, languageCode: locale },
     );
 
-    const courses = data.myLearningDashboard?.courses ?? [];
+    const courses = (data.myLearningDashboard?.courses ?? []) as LearningCourse[];
 
     return (
         <div className="container mx-auto px-4 py-12">
@@ -39,14 +40,7 @@ export default async function LearningDashboardPage() {
                     </Link>
                 </div>
             ) : (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    {courses.map((course) => (
-                        <CourseCard
-                            key={course.id}
-                            course={course}
-                        />
-                    ))}
-                </div>
+                <LearningDashboardClient initialCourses={courses} />
             )}
         </div>
     );

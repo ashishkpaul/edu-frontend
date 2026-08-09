@@ -1,21 +1,37 @@
 'use client';
 
-import {use} from 'react';
 import {Card, CardContent} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
-import {CheckCircle, XCircle} from 'lucide-react';
+import {CheckCircle, Loader2, XCircle} from 'lucide-react';
 import {useTranslations} from 'next-intl';
 
 type VerifyResultType = {success: boolean; error?: undefined} | {error: string; success?: undefined};
 
 interface VerifyResultProps {
-    resultPromise: Promise<VerifyResultType>;
+    result: VerifyResultType | null;
 }
 
-export function VerifyResult({resultPromise}: VerifyResultProps) {
+export function VerifyResult({result}: VerifyResultProps) {
     const t = useTranslations('Verify');
-    const result = use(resultPromise);
+
+    if (!result) {
+        return (
+            <Card>
+                <CardContent className="pt-6 space-y-4">
+                    <div className="flex justify-center">
+                        <Loader2 className="h-16 w-16 text-primary animate-spin"/>
+                    </div>
+                    <div className="space-y-2 text-center">
+                        <h1 className="text-2xl font-bold">Verifying Your Account</h1>
+                        <p className="text-muted-foreground">
+                            Please wait while we verify your email address...
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
 
     const isSuccess = 'success' in result;
 

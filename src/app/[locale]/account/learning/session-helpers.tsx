@@ -3,8 +3,15 @@
 import { useState, useEffect } from 'react';
 
 // ─── Presentational helpers (Phase 1 — no eligibility logic) ────────────────
+//
+// IMPORTANT: These states reflect only what the backend `LearningCourse`
+// contract (learning-dashboard.service.ts) can express. There is NO `REVIEW`
+// state here: the dashboard does not expose review eligibility/request fields,
+// so a clock-derived COMPLETED → REVIEW transition would invent business logic
+// on the storefront (INV-006/INV-008). REVIEW is driven by the review domain
+// (product-review service + pendingReviewRequests), not by this file.
 
-export type SessionStatus = 'ENTITLED' | 'UPCOMING' | 'LIVE' | 'JOIN' | 'COMPLETED' | 'REVIEW';
+export type SessionStatus = 'UPCOMING' | 'LIVE' | 'JOIN' | 'COMPLETED';
 
 export function getSessionStatus(
     startTime: string,
@@ -15,6 +22,9 @@ export function getSessionStatus(
     const start = new Date(startTime);
     const end = new Date(endTime);
 
+    // canJoin is decided entirely server-side (entitlement valid + session LIVE).
+    // The client must not re-derive eligibility from the clock; it merely
+    // surfaces the server's decision as the highest-priority state.
     if (canJoin) return 'JOIN';
     if (now >= start && now <= end) return 'LIVE';
     if (now < start) return 'UPCOMING';
@@ -48,12 +58,10 @@ export function formatCountdown(startTime: string, endTime: string): string {
 }
 
 const statusStyles: Record<SessionStatus, string> = {
-    ENTITLED: 'bg-gray-100 text-gray-800',
     UPCOMING: 'bg-blue-100 text-blue-800',
     LIVE: 'bg-green-100 text-green-800',
     JOIN: 'bg-green-100 text-green-800',
     COMPLETED: 'bg-gray-100 text-gray-800',
-    REVIEW: 'bg-yellow-100 text-yellow-800',
 };
 
 export function SessionStatusBadge({ status }: { status: SessionStatus }) {

@@ -2,7 +2,9 @@
 
 import { LiveCountdown, SessionStatusBadge, getSessionStatus } from './session-helpers';
 
-interface Course {
+// Shared type matching the backend `LearningCourse` contract
+// (learning-dashboard.service.ts). Storefront-facing — no Bbb* types (INV-006).
+export interface LearningCourse {
     id: string;
     title: string;
     instructorName: string | null;
@@ -15,19 +17,19 @@ interface Course {
 }
 
 interface CourseCardProps {
-    course: Course;
+    course: LearningCourse;
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
     const status = course.nextSession
         ? getSessionStatus(course.nextSession.startsAt, course.nextSession.endsAt, course.canJoin)
-        : 'ENTITLED';
+        : null;
 
     return (
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <div className="flex items-start justify-between gap-2">
                 <h2 className="text-xl font-semibold">{course.title}</h2>
-                {course.nextSession && <SessionStatusBadge status={status} />}
+                {status && <SessionStatusBadge status={status} />}
             </div>
 
             {course.instructorName && (
@@ -74,25 +76,13 @@ export default function CourseCard({ course }: CourseCardProps) {
                 >
                     Join class
                 </a>
-            ) : course.isTrial === true && !course.joinUrl ? (
-                // Trial CTA — presentational only. No eligibility check here (INV-008).
-                // The server has already confirmed entitlement by including this course
-                // in myLearningDashboard. This button links to the trial registration flow.
-                <a
-                    href={`/product/${course.id}`}
-                    className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700"
-                >
-                    Start free trial
-                </a>
-            ) : course.nextSession ? (
+            ) : status === 'LIVE' || status === 'JOIN' ? (
                 <p className="mt-4 text-sm text-muted-foreground">
-                    {status === 'LIVE' || status === 'JOIN'
-                        ? 'Session starting soon...'
-                        : 'Not yet available'}
+                    Session starting soon — join link will appear when it goes live.
                 </p>
             ) : (
                 <p className="mt-4 text-sm text-muted-foreground">
-                    No upcoming sessions
+                    {status === 'UPCOMING' ? 'Not yet available' : 'No upcoming sessions'}
                 </p>
             )}
         </div>

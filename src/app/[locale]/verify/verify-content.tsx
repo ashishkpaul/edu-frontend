@@ -1,13 +1,15 @@
 'use client';
 
-import {use} from 'react';
+import {use, useEffect, useState} from 'react';
 import {VerifyResult} from './verify-result';
 import {verifyAccountAction} from './actions';
 import {Card, CardContent} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
-import {XCircle} from 'lucide-react';
+import {Loader2, XCircle} from 'lucide-react';
 import {useTranslations} from 'next-intl';
+
+type VerifyResultType = {success: boolean; error?: undefined} | {error: string; success?: undefined};
 
 interface VerifyContentProps {
     searchParams: Promise<{ token?: string }>;
@@ -17,6 +19,21 @@ export function VerifyContent({searchParams}: VerifyContentProps) {
     const t = useTranslations('Verify');
     const params = use(searchParams);
     const token = params.token;
+
+    const [result, setResult] = useState<VerifyResultType | null>(null);
+
+    useEffect(() => {
+        if (!token) return;
+        let cancelled = false;
+
+        verifyAccountAction(token).then((res) => {
+            if (!cancelled) setResult(res);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [token]);
 
     if (!token) {
         return (
@@ -48,7 +65,5 @@ export function VerifyContent({searchParams}: VerifyContentProps) {
         );
     }
 
-    const verifyPromise = verifyAccountAction(token);
-
-    return <VerifyResult resultPromise={verifyPromise}/>;
+    return <VerifyResult result={result}/>;
 }

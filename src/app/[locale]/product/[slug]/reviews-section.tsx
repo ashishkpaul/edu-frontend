@@ -1,11 +1,20 @@
 import { query } from '@/lib/vendure/api';
-import { graphql, readFragment, FragmentOf } from '@/graphql';
-import ReviewCard, { ReviewCardFragment } from '@/components/commerce/review-card';
+import { graphql } from '@/graphql';
+import ReviewCard from '@/components/commerce/review-card';
 import ReviewForm from '@/components/commerce/review-form';
 import ReviewActions from './review-actions';
 
-// ─── Co-located query — spreads ReviewCardFragment so gql.tada tracks all
-// fields as used through the fragment, satisfying rule 52005. ─────────────────
+interface ReviewItem {
+    id: string;
+    summary: string;
+    body: string | null;
+    rating: number;
+    authorName: string;
+    createdAt: string;
+    verifiedPurchase: boolean;
+    upvotes: number;
+    downvotes: number;
+}
 
 const ProductReviewsQuery = graphql(`
     query ProductReviewsSection($slug: String!, $skip: Int, $take: Int) {
@@ -13,12 +22,20 @@ const ProductReviewsQuery = graphql(`
             id
             reviews(options: { skip: $skip, take: $take }) {
                 items {
-                    ...ReviewCardFields
+                    id
+                    summary
+                    body
+                    rating
+                    authorName
+                    createdAt
+                    verifiedPurchase
+                    upvotes
+                    downvotes
                 }
             }
         }
     }
-`, [ReviewCardFragment]);
+`);
 
 interface ReviewsSectionProps {
     productId: string;
@@ -26,11 +43,11 @@ interface ReviewsSectionProps {
 }
 
 export default async function ReviewsSection({ productId, productSlug }: ReviewsSectionProps) {
-    let items: FragmentOf<typeof ReviewCardFragment>[] = [];
+    let items: ReviewItem[] = [];
 
     try {
         const result = await query(ProductReviewsQuery, { slug: productSlug, skip: 0, take: 20 });
-        items = (result.data.product?.reviews?.items ?? []) as FragmentOf<typeof ReviewCardFragment>[];
+        items = result.data.product?.reviews?.items ?? [];
     } catch (error) {
         console.error('Failed to load reviews:', error);
     }
@@ -52,25 +69,19 @@ export default async function ReviewsSection({ productId, productSlug }: Reviews
                                 {items.length} {items.length === 1 ? 'Review' : 'Reviews'}
                             </h3>
                             <div className="space-y-4">
-                                {items.map((item, index) => {
-                                    // Unwrap once for the props that ReviewActions needs directly.
-                                    // ReviewCard unwraps internally via readFragment.
-                                    const data = readFragment(ReviewCardFragment, item);
-                                    return (
-                                        <div key={index} className="relative">
-                                            <ReviewCard review={item} showActions={false} />
-                                            {'id' in data && (
-                                                <div className="absolute bottom-4 right-4">
-                                                    <ReviewActions
-                                                        reviewId={data.id}
-                                                        initialUpvotes={data.upvotes}
-                                                        initialDownvotes={data.downvotes}
-                                                    />
-                                                </div>
-                                            )}
+                                {items.map((item) => (
+                                    <div key={item.id} className="relative">
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                        <ReviewCard review={item as any} showActions={false} />
+                                        <div className="absolute bottom-4 right-4">
+                                            <ReviewActions
+                                                reviewId={item.id}
+                                                initialUpvotes={item.upvotes}
+                                                initialDownvotes={item.downvotes}
+                                            />
                                         </div>
-                                    );
-                                })}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
