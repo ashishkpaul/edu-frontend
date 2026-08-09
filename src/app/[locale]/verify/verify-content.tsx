@@ -6,7 +6,7 @@ import {verifyAccountAction} from './actions';
 import {Card, CardContent} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
-import {Loader2, XCircle} from 'lucide-react';
+import {XCircle} from 'lucide-react';
 import {useTranslations} from 'next-intl';
 
 type VerifyResultType = {success: boolean; error?: undefined} | {error: string; success?: undefined};

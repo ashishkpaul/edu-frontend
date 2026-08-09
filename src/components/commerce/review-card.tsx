@@ -1,26 +1,23 @@
 'use client';
 
 import { Star, ThumbsUp, ThumbsDown, Flag, CheckCircle } from 'lucide-react';
-import { graphql, FragmentOf, readFragment } from '@/graphql';
 
-// ─── Co-located fragment ─────────────────────────────────────────────────────
-// Exported so callers can spread it into their co-located queries.
-
-export const ReviewCardFragment = graphql(`
-    fragment ReviewCardFields on ProductReview {
-        id
-        summary
-        body
-        rating
-        authorName
-        createdAt
-        verifiedPurchase
-        upvotes
-        downvotes
-    }
-`);
-
-export type Review = FragmentOf<typeof ReviewCardFragment>;
+// ─── Plain domain type ───────────────────────────────────────────────────────
+// Mirrors the fields selected by the co-located review query. No gql.tada
+// fragment here: the fragment-free pattern avoids the unused-fragment lint
+// (52003) and keeps the query document the single source of truth
+// (see reviews-section.tsx, which derives its item type from the query).
+export interface Review {
+    id: string;
+    summary: string;
+    body: string | null;
+    rating: number;
+    authorName: string;
+    createdAt: string;
+    verifiedPurchase: boolean;
+    upvotes: number;
+    downvotes: number;
+}
 
 interface ReviewCardProps {
     review: Review;
@@ -29,8 +26,7 @@ interface ReviewCardProps {
     showActions?: boolean;
 }
 
-export default function ReviewCard({ review: reviewProp, onVote, onReport, showActions = true }: ReviewCardProps) {
-    const review = readFragment(ReviewCardFragment, reviewProp);
+export default function ReviewCard({ review, onVote, onReport, showActions = true }: ReviewCardProps) {
     const date = new Date(review.createdAt).toLocaleDateString();
 
     return (
