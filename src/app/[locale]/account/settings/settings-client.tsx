@@ -94,19 +94,19 @@ export default function AccountSettingsClient() {
                 </div>
 
                 <AlertDialog>
-                    <AlertDialogTrigger>
-                        <button
-                            disabled={leavingAcademy}
-                            className="inline-flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {leavingAcademy ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <LogOut className="h-4 w-4" />
-                            )}
-                            Leave Academy
-                        </button>
-                    </AlertDialogTrigger>
+                    <AlertDialogTrigger
+                        disabled={leavingAcademy}
+                        render={
+                            <button className="inline-flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/5 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                {leavingAcademy ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <LogOut className="h-4 w-4" />
+                                )}
+                                Leave Academy
+                            </button>
+                        }
+                    />
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>Leave this academy?</AlertDialogTitle>
@@ -153,19 +153,19 @@ export default function AccountSettingsClient() {
                         if (!open) setDeletePassword('');
                     }}
                 >
-                    <AlertDialogTrigger>
-                        <button
-                            disabled={deletingAccount}
-                            className="inline-flex items-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {deletingAccount ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                                <Trash2 className="h-4 w-4" />
-                            )}
-                            Delete my account
-                        </button>
-                    </AlertDialogTrigger>
+                    <AlertDialogTrigger
+                        disabled={deletingAccount}
+                        render={
+                            <button className="inline-flex items-center gap-2 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                                {deletingAccount ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                )}
+                                Delete my account
+                            </button>
+                        }
+                    />
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle className="text-destructive">
