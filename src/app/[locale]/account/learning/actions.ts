@@ -3,6 +3,7 @@
 import { query } from '@/lib/vendure/api';
 import { getAuthToken } from '@/lib/auth';
 import { GetMyLearningDashboardQuery } from '@/lib/vendure/queries';
+import type { LearningCourse } from './course-card';
 
 /**
  * Server action: re-fetch the learning dashboard.
@@ -24,7 +25,7 @@ export async function getLearningDashboardAction() {
             undefined,
             { useAuthToken: true },
         );
-        return { courses: data.myLearningDashboard?.courses ?? [] };
+        return { courses: (data.myLearningDashboard?.courses ?? []) as LearningCourse[] };
     } catch {
         // Non-fatal — keep showing whatever the client already has.
         return { courses: null };

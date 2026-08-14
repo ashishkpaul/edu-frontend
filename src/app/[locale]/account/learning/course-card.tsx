@@ -14,6 +14,10 @@ export interface LearningCourse {
     nextSession: { startsAt: string; endsAt: string } | null;
     canJoin: boolean;
     joinUrl: string | null;
+    // Server-driven CTA (INV-008) — the client renders these, it does not
+    // re-derive entitlement/eligibility from the clock.
+    ctaAction: 'join' | 'none';
+    ctaLabel: string;
 }
 
 interface CourseCardProps {
@@ -69,21 +73,15 @@ export default function CourseCard({ course }: CourseCardProps) {
                 </div>
             )}
 
-            {course.canJoin && course.joinUrl ? (
+            {course.ctaAction === 'join' && course.joinUrl ? (
                 <a
                     href={course.joinUrl}
                     className="mt-4 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
-                    Join class
+                    {course.ctaLabel}
                 </a>
-            ) : status === 'LIVE' || status === 'JOIN' ? (
-                <p className="mt-4 text-sm text-muted-foreground">
-                    Session starting soon — join link will appear when it goes live.
-                </p>
             ) : (
-                <p className="mt-4 text-sm text-muted-foreground">
-                    {status === 'UPCOMING' ? 'Not yet available' : 'No upcoming sessions'}
-                </p>
+                <p className="mt-4 text-sm text-muted-foreground">{course.ctaLabel}</p>
             )}
         </div>
     );

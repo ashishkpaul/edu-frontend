@@ -538,6 +538,8 @@ export const GetMyLearningDashboardQuery = graphql(`
                 isTrial
                 entitlementType
                 entitlementSource
+                ctaAction
+                ctaLabel
             }
         }
     }
