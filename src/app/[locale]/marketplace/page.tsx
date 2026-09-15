@@ -6,6 +6,30 @@ import { Search, Star, MapPin, ChevronLeft, ChevronRight, Sparkles } from 'lucid
 
 const PAGE_SIZE = 20;
 
+/**
+ * Deep-link URL for a marketplace result (storefront audit B-1/B-3).
+ *
+ * - Custom-domain academies route via their customDomain; the default is the
+ *   {academySlug}.saa9vi.com subdomain.
+ * - Purchasable sessions deep-link straight to the tenant product page and
+ *   carry the opaque, server-signed marketplaceRef as ?ref= — the storefront
+ *   only transports the ref; the tenant's Vendure verifies it and classifies
+ *   orderSource server-side (INV-008).
+ * - Non-purchasable results (no productSlug) fall back to the academy root.
+ */
+function buildAcademyHref(item: {
+    academySlug: string;
+    customDomain?: string | null;
+    productSlug?: string | null;
+    marketplaceRef?: string | null;
+}): string {
+    const host = item.customDomain || `${item.academySlug}.saa9vi.com`;
+    const base = `https://${host}`;
+    if (!item.productSlug) return base;
+    const ref = item.marketplaceRef ? `?ref=${encodeURIComponent(item.marketplaceRef)}` : '';
+    return `${base}/product/${item.productSlug}${ref}`;
+}
+
 interface Props {
     searchParams: Promise<{ q?: string; subject?: string; city?: string; page?: string }>;
 }
@@ -183,10 +207,10 @@ export default async function MarketplacePage({ searchParams }: Props) {
                                         )}
                                     </div>
                                     <Link
-                                        href={`https://${session.academySlug}.saa9vi.com`}
+                                        href={buildAcademyHref(session)}
                                         className="mt-4 inline-flex items-center text-sm text-primary hover:underline"
                                     >
-                                        Visit academy →
+                                        {session.productSlug ? 'View session →' : 'Visit academy →'}
                                     </Link>
                                 </div>
                             ))}
@@ -264,7 +288,7 @@ export default async function MarketplacePage({ searchParams }: Props) {
                                         </div>
                                     )}
                                     <Link
-                                        href={`https://${instructor.academySlug}.saa9vi.com`}
+                                        href={buildAcademyHref(instructor)}
                                         className="mt-2 inline-flex items-center text-sm text-primary hover:underline"
                                     >
                                         View academy →

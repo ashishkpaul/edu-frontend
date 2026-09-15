@@ -16,6 +16,16 @@ export const LoginMutation = graphql(`
     }
 `);
 
+export const ApplyMarketplaceReferenceMutation = graphql(`
+    mutation ApplyMarketplaceReference($ref: String!) {
+        applyMarketplaceReference(ref: $ref) {
+            ok
+            orderId
+            code
+        }
+    }
+`);
+
 export const AddToCartMutation = graphql(`
     mutation AddToCart($variantId: ID!, $quantity: Int!) {
         addItemToOrder(productVariantId: $variantId, quantity: $quantity) {

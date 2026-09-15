@@ -629,7 +629,10 @@ export const GetMarketplaceSearchQuery = graphql(`
             sessions {
                 id
                 productVariantId
+                productSlug
+                marketplaceRef
                 channelToken
+                customDomain
                 title
                 startTime
                 endTime

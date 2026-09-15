@@ -119,7 +119,12 @@ export function ProductInfo({product, searchParams, currencyCode}: ProductInfoPr
         if (!selectedVariant) return;
 
         startTransition(async () => {
-            const result = await addToCart(selectedVariant.id, 1);
+            // Carry the marketplace attribution ref (if the landing URL had one)
+            // into the server action; the ref is applied server-side against the
+            // active order and never influences orderSource selection (INV-008).
+            const refParam = searchParams?.ref;
+            const marketplaceRef = typeof refParam === 'string' ? refParam : undefined;
+            const result = await addToCart(selectedVariant.id, 1, marketplaceRef);
 
             if (result.success) {
                 setIsAdded(true);
