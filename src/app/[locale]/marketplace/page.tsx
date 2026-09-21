@@ -2,7 +2,7 @@ import { queryPublic } from '@/lib/vendure/api';
 import { GetMarketplaceSearchQuery } from '@/lib/vendure/queries';
 import { getRouteLocale } from '@/i18n/server';
 import Link from 'next/link';
-import { Search, Star, MapPin, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Search, Star, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 const PAGE_SIZE = 20;
 
@@ -31,7 +31,7 @@ function buildAcademyHref(item: {
 }
 
 interface Props {
-    searchParams: Promise<{ q?: string; subject?: string; city?: string; page?: string }>;
+    searchParams: Promise<{ q?: string; subject?: string; page?: string }>;
 }
 
 export default async function MarketplacePage({ searchParams }: Props) {
@@ -40,7 +40,6 @@ export default async function MarketplacePage({ searchParams }: Props) {
 
     const query = params.q ?? '';
     const subject = params.subject ?? '';
-    const city = params.city ?? '';
     const page = Math.max(1, parseInt(params.page ?? '1', 10) || 1);
     const skip = (page - 1) * PAGE_SIZE;
 
@@ -50,7 +49,6 @@ export default async function MarketplacePage({ searchParams }: Props) {
             input: {
                 query,
                 subjectTags: subject ? [subject] : undefined,
-                city: city || undefined,
                 skip,
                 take: PAGE_SIZE,
             },
@@ -69,7 +67,6 @@ export default async function MarketplacePage({ searchParams }: Props) {
         const sp = new URLSearchParams();
         if (query) sp.set('q', query);
         if (subject) sp.set('subject', subject);
-        if (city) sp.set('city', city);
         for (const [key, value] of Object.entries(overrides)) {
             if (value) sp.set(key, value);
             else sp.delete(key);
@@ -104,13 +101,6 @@ export default async function MarketplacePage({ searchParams }: Props) {
                     placeholder="Subject (e.g. Math)"
                     className="rounded-md border border-input bg-background px-4 py-2 text-sm md:w-48"
                 />
-                <input
-                    type="text"
-                    name="city"
-                    defaultValue={city}
-                    placeholder="City"
-                    className="rounded-md border border-input bg-background px-4 py-2 text-sm md:w-40"
-                />
                 <button
                     type="submit"
                     className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -120,25 +110,14 @@ export default async function MarketplacePage({ searchParams }: Props) {
             </form>
 
             {/* Active filter chips */}
-            {(subject || city) && (
+            {subject && (
                 <div className="flex flex-wrap items-center gap-2 mb-6">
-                    {subject && (
-                        <Link
-                            href={buildHref({ subject: undefined })}
-                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
-                        >
-                            {subject} ×
-                        </Link>
-                    )}
-                    {city && (
-                        <Link
-                            href={buildHref({ city: undefined })}
-                            className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
-                        >
-                            <MapPin className="h-3 w-3" />
-                            {city} ×
-                        </Link>
-                    )}
+                    <Link
+                        href={buildHref({ subject: undefined })}
+                        className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary hover:bg-primary/20"
+                    >
+                        {subject} ×
+                    </Link>
                 </div>
             )}
 
