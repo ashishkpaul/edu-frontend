@@ -476,6 +476,23 @@ export const RegisterNewTenantMutation = graphql(`
     }
 `);
 
+// Admin-API sign-in bridge document (slice 9). Deliberately selects ONLY
+// __typename: this deployment's admin login resolves `CurrentUser { id
+// identifier }` to null for plugin-registered tenant administrators even
+// though authentication succeeds (the session token is issued in the response
+// header), and selecting those non-null fields would throw away an otherwise
+// valid session with a GraphQL error. Success = `__typename: CurrentUser`
+// plus the vendure-auth-token response header; any other typename is a
+// credential failure. Observed live 2026-09-24 (superadmin resolves both
+// fields; registerNewTenant-created administrators resolve neither).
+export const AdminSessionLoginMutation = graphql(`
+    mutation AdminSessionLogin($username: String!, $password: String!) {
+        login(username: $username, password: $password) {
+            __typename
+        }
+    }
+`);
+
 export const RegisterForTrialMutation = graphql(`
     mutation RegisterForTrial($sessionId: ID!) {
         registerForTrial(sessionId: $sessionId) {

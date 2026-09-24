@@ -684,3 +684,48 @@ export const GetMarketplaceSearchQuery = graphql(`
         }
     }
 `);
+
+export const GetAvailableSubscriptionPlansQuery = graphql(`
+    query GetAvailableSubscriptionPlans {
+        availableSubscriptionPlans {
+            id
+            name
+            slug
+            description
+            monthlyPriceInPaise
+            includedBbbMinutes
+            maxStudents
+            customDomainEnabled
+            whitelabelEnabled
+            marketplaceListingEnabled
+        }
+    }
+`);
+
+// Business-account panels (slice 8): Permission.Authenticated plus the
+// backend's tenant business-account ownership check. The storefront renders
+// whatever comes back — including null — and never re-derives entitlement.
+export const GetMySubscriptionDashboardQuery = graphql(`
+    query GetMySubscriptionDashboard {
+        mySubscription {
+            plan {
+                id
+                name
+            }
+            status
+            currentPeriodStart
+            currentPeriodEnd
+            cancelAtPeriodEnd
+            cancelledAt
+            marketplaceEligible
+        }
+        myLiveUsage {
+            periodStart
+            periodEnd
+            includedMinutes
+            consumedMinutes
+            remainingMinutes
+            isUnbounded
+        }
+    }
+`);

@@ -19,6 +19,15 @@ interface VendureRequestOptions {
     currencyCode?: string;
     fetch?: RequestInit;
     tags?: string[];
+    /**
+     * Override the API endpoint for this call (server-side only). Used for the
+     * Admin-API business-account login fallback: slice 8 established that the
+     * Shop API's `login` resolves through the `customer` table, so a tenant
+     * administrator must authenticate against the Admin API — the session it
+     * issues is not api-type-scoped and is therefore accepted by Shop reads
+     * (mySubscription / myLiveUsage).
+     */
+    url?: string;
 }
 
 interface VendureResponse<T> {
@@ -126,7 +135,7 @@ export async function query<TResult, TVariables>(
         headers[VENDURE_CHANNEL_TOKEN_HEADER] = resolvedChannelToken;
     }
 
-    const url = new URL(VENDURE_API_URL!);
+    const url = new URL(options?.url ?? VENDURE_API_URL!);
     if (languageCode) {
         url.searchParams.set('languageCode', languageCode);
     }

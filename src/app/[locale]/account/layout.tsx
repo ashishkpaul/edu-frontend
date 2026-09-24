@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 
 const navItems = [
     {href: '/account/learning', labelKey: 'learning', icon: 'BookOpen'},
+    {href: '/account/billing', labelKey: 'billing', icon: 'CreditCard'},
     {href: '/account/orders', labelKey: 'orders', icon: 'Package'},
     {href: '/account/reviews', labelKey: 'reviews', icon: 'Star'},
     {href: '/account/addresses', labelKey: 'addresses', icon: 'MapPin'},
