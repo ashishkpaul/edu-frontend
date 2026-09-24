@@ -7,13 +7,21 @@
 #
 # SECURITY NOTE — read before deploying:
 # copy_headers below performs a Set (overwrite), not an Add. Because
-# /api/resolve-channel ALWAYS returns the x-saa9vi-channel-token header —
-# to the real token, or to an empty string when there's no match — the
-# overwrite always happens, on every request, regardless of whether a
-# tenant was found. There is no code path where a client-supplied
-# x-saa9vi-channel-token survives to the upstream request. Do not "clean
-# up" the always-empty-string branch in route.ts — it's what makes this
-# safe rather than relying on directive ordering.
+# /api/resolve-channel ALWAYS returns the x-saa9vi-channel-token header on a
+# 200 — to the real token, or to an empty string when no tenant was resolved —
+# the overwrite always happens, on every request forward_auth allows. There is
+# no code path where a client-supplied x-saa9vi-channel-token survives to the
+# upstream request. Do not "clean up" the always-empty-string branch in
+# route.ts — it's what makes this safe rather than relying on directive
+# ordering.
+#
+# Status handling (B-6, 2026-09-24): forward_auth denies the request when the
+# auth backend does not return 2xx, so a 403 from /api/resolve-channel (Redis
+# healthy, public hostname has no Redis mapping) or a 500 (resolution
+# misconfigured) stops the request here, before reverse_proxy — unmapped tenant
+# hostnames never reach Next.js and cannot fall back to the default channel's
+# storefront. A Redis *outage* still returns 200 + '' (the site keeps serving
+# against the env-var fallback, VERIFY.md §3).
 #
 # Update the site addresses below to your actual academy domains, or use
 # a wildcard/on-demand TLS block if you're provisioning academies

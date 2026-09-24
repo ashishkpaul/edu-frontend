@@ -121,6 +121,7 @@ This storefront serves multiple academies from a single deployment. Each academy
 1. Browser requests `https://academy-a.example.com/...`
 2. The reverse proxy (nginx or a Cloudflare Worker) sits in front of Next.js and:
    - resolves the hostname by calling `GET /api/resolve-channel?hostname=academy-a.example.com`
+   - **denies the request with `403`** when Redis is healthy but that hostname has no mapping, so an unmapped tenant hostname can never render the default channel's storefront (fail-closed — gap B-6; see [Deployment](#deployment))
    - **strips** any `x-saa9vi-channel-token` header the client may have sent (trust boundary — see [Deployment](#deployment))
    - sets the resolved token as `x-saa9vi-channel-token` on the request it forwards to Next.js
 3. Next.js reads that header in `lib/vendure/api.ts` and scopes every Vendure Shop API call — and every cache tag — to that channel.
@@ -129,6 +130,8 @@ This storefront serves multiple academies from a single deployment. Each academy
 1. Explicit `channelToken` argument passed to `query()` (used by cached functions — see below)
 2. `x-saa9vi-channel-token` header set by the reverse proxy (production multi-tenancy)
 3. `VENDURE_CHANNEL_TOKEN` env var (local dev / preview deployments with no custom domain)
+
+Priority 3 also applies when the proxy resolved "no tenant" — which by design only happens for private hostnames (dev) and Redis **outages**; an *unmapped* tenant hostname is rejected with `403` at the proxy before Next.js runs. Note that nginx does not forward a header whose value is empty, so `''` and "header absent" both arrive at `api.ts` as "no header" — which is exactly why the deny is expressed as an HTTP status rather than a header value.
 
 ### Caching Strategy (Next.js 16 `'use cache'`)
 
@@ -182,7 +185,7 @@ src/
 │       ├── mutations.ts       # GraphQL mutation definitions
 │       ├── fragments.ts       # gql.tada fragment definitions
 │       ├── actions.ts         # Server actions
-│       └── session-cta.ts     # Session CTA helper (INV-008 isolation)
+│       └── session-cta.ts     # Session CTA helper (INV-008 isolation) — DELETED in 0ee5b2d (server-driven CTA via ctaAction/ctaLabel)
 ├── components/
 │   ├── commerce/              # Product, cart, checkout components
 │   ├── layout/                # Navbar, footer (both channel-scoped)
@@ -197,12 +200,19 @@ src/
 
 ### `GET /api/resolve-channel?hostname=...`
 
-Resolves a custom domain to a Vendure channel token via Redis. Returns `{ channelToken: string | null }`.
+Resolves a custom domain to a Vendure channel token via Redis. Called by the reverse proxy (nginx/Cloudflare Worker), not by the browser. Key format: `channel-token:{hostname}`.
 
-- Called by the reverse proxy (nginx/Cloudflare Worker), not by the browser
-- Returns `null` for localhost/IP addresses (dev mode)
-- Falls back to `null` if Redis is unavailable
-- Key format: `channel-token:{hostname}`
+| Situation | Status | `x-saa9vi-channel-token` | JSON body |
+| --- | --- | --- | --- |
+| Mapping found | `200` | the token | `{ channelToken }` |
+| localhost / private IP, or no `hostname` param (dev) | `200` | `''` | `{ channelToken: null }` |
+| Redis unreachable or erroring (outage — fails open) | `200` | `''` | `{ channelToken: null }` |
+| Redis healthy, **no mapping** for this public hostname | `403` | `''` | `{ channelToken: null, error: "hostname_not_mapped" }` |
+| Resolution misconfigured (e.g. wrong credentials, revoked ACL) | `500` | `''` | `{ channelToken: null, error: "channel_resolution_misconfigured" }` |
+
+- The header is **always** set, including on denials — proxies overwrite unconditionally, so a client-supplied value can never survive
+- `403`, not `404`, because nginx's `auth_request` passes only `2xx`/`401`/`403` to the client — any other status becomes an opaque `500`
+- The `403`/`500` rows are the fail-closed half of gap B-6: a public hostname with no tenant must not silently render the default channel. Redis *outages* deliberately stay fail-open (availability), which is why the two are distinguished by status rather than both collapsing into `''`
 
 ### `POST /api/revalidate`
 
@@ -217,7 +227,7 @@ On-demand cache revalidation. Called by Vendure webhooks when data changes.
    - Strip any client-supplied `x-saa9vi-channel-token` header
    - Set the resolved `x-saa9vi-channel-token` header on the upstream request
 
-   Reference configs for both are in [`deploy/`](./deploy): [`deploy/Caddyfile`](./deploy/Caddyfile) (recommended if you don't already run nginx — uses Caddy's built-in `forward_auth`) and [`deploy/nginx/`](./deploy/nginx) (uses the `njs` module for the subrequest + header injection nginx doesn't do natively). Both rely on `/api/resolve-channel` **always** returning the resolution header — even as `''` when there's no match — so the overwrite step is unconditional rather than depending on directive-ordering assumptions; see the comments in each config for why. **Run through [`deploy/VERIFY.md`](./deploy/VERIFY.md) against staging before trusting either in production** — in particular, confirm a spoofed client header actually gets stripped for an unmapped hostname, which is the one failure mode that matters here.
+   Reference configs for both are in [`deploy/`](./deploy): [`deploy/Caddyfile`](./deploy/Caddyfile) (recommended if you don't already run nginx — uses Caddy's built-in `forward_auth`) and [`deploy/nginx/`](./deploy/nginx) (the `njs` config, plus the njs-free `auth_request` variant). Both rely on `/api/resolve-channel` **always** returning the resolution header on a `200` — even as `''` when there is no tenant — so the overwrite step is unconditional rather than depending on directive-ordering assumptions. A `403` from the route (unmapped public hostname) or a `500` (misconfigured lookup) is a *denial*: nginx and Caddy both refuse the request before Next.js renders, which is what closes gap B-6 — an unmapped tenant hostname cannot silently fall back to the default channel. A Redis **outage** is deliberately different: the route still answers `200` + `''` and the site keeps serving against the `VENDURE_CHANNEL_TOKEN` fallback. See the comments in each config for why. **Run through [`deploy/VERIFY.md`](./deploy/VERIFY.md) against staging before trusting either in production** — in particular, confirm the unmapped-hostname denial (§2) and that a spoofed client header is still stripped (§3), which are the failure modes that matter here.
 
 2. **Redis** must be populated with hostname→channelToken mappings:
    ```

@@ -94,11 +94,30 @@ export async function query<TResult, TVariables>(
 
     // Resolve channel token with this priority:
     // 1. Explicitly provided channelToken option (bypasses header check - safe for cached functions)
-    // 2. x-saa9vi-channel-token header set by middleware (custom-domain academies)
+    // 2. x-saa9vi-channel-token header set by the reverse proxy (custom-domain academies)
     // 3. VENDURE_CHANNEL_TOKEN env var (local dev / preview deployments)
     //
     // Special case: channelToken === '' means "no channel token" (used by queryPublic
     // for cross-tenant queries like marketplace search). Skip the header entirely.
+    //
+    // Header states, and the B-6 fail-closed guarantee:
+    //   - token   → use it (the proxy resolved this hostname to a tenant).
+    //   - ''      → "no tenant resolved": Caddy's copy_headers preserves an
+    //               empty value; the env-var fallback below is intended.
+    //   - null    → no header at all: direct/dev requests, the marketplace
+    //               vhost (deliberately header-free), or a proxied request for
+    //               a hostname with no tenant — nginx drops the proxy's
+    //               empty-valued header, making that case indistinguishable
+    //               from "no proxy" by the time it arrives here. Also falls
+    //               back to the env var.
+    // Both '' and null therefore mean "no tenant resolved → env fallback", and
+    // that stays safe because the only requests where the fallback would be
+    // wrong — an unmapped tenant hostname — never get this far: the reverse
+    // proxy denies them with a 403 at the edge. See
+    // src/app/api/resolve-channel/route.ts (contract block) and deploy/*.
+    // Do not "fix" this by throwing on '' — under nginx that value never
+    // arrives, so the throw would be dead code while the leak it targets
+    // stayed open.
     const headerChannelToken = channelToken ?? (await getChannelTokenFromHeaders());
     if (channelToken === '') {
         // queryPublic — skip channel token header for cross-tenant queries
