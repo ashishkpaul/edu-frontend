@@ -12,6 +12,7 @@ import {Toaster} from "@/components/ui/sonner";
 import {Navbar} from "@/components/layout/navbar";
 import {Footer} from "@/components/layout/footer";
 import {ThemeProvider} from "@/components/providers/theme-provider";
+import {TenantThemeStyle} from "@/components/providers/tenant-theme-style";
 import {SITE_NAME, SITE_URL} from "@/lib/metadata";
 import "./globals.css";
 
@@ -95,6 +96,12 @@ export default async function LocaleLayout({children}: {children: React.ReactNod
             >
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider>
+                        {/* ADR-043 L1 tenant theme — no output unless a tenant
+                            theme is resolved for this request (see the module
+                            docs). Its own boundary so it never blocks the shell. */}
+                        <Suspense>
+                            <TenantThemeStyle />
+                        </Suspense>
                         <Suspense>
                             <Navbar />
                             {children}

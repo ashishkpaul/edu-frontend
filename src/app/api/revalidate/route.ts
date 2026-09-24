@@ -15,6 +15,9 @@ const TAG_RULES: ReadonlyArray<{match: string | RegExp; kind: TagKind}> = [
     {match: /^footer$/, kind: 'locale-only'},
     {match: /^navbar-collections$/, kind: 'locale-only'},
     {match: /^mobile-nav$/, kind: 'locale-only'},
+    // ADR-043 L1 tenant theme, cached per channel×locale. Purge with the tag
+    // `tenant-theme-<channelToken>` (expanded per locale by this route).
+    {match: /^tenant-theme-.+$/, kind: 'locale-only'},
     {match: /^product-.+$/, kind: 'currency-dependent'},
     {match: /^collection-.+$/, kind: 'currency-dependent'},
     {match: /^related-products-.+$/, kind: 'currency-dependent'},

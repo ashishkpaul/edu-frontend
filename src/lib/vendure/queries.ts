@@ -556,6 +556,28 @@ export const GetBbbRoomStatusQuery = graphql(`
     }
 `);
 
+// ─── ADR-043 L1 tenant theme (slice 9) ────────────────────────────────────
+// `myTenantTheme` is Permission.Public but entitlement-conditional: it returns
+// null whenever the channel has no active, whitelabel-enabled theme (ADR-043).
+// The storefront renders what it is given — it does not re-evaluate that.
+export const GetMyTenantThemeQuery = graphql(`
+    query GetMyTenantTheme {
+        myTenantTheme {
+            id
+            channelId
+            version
+            primaryColor
+            secondaryColor
+            accentColor
+            backgroundColor
+            textColor
+            fontFamily
+            displayName
+            logoAssetId
+        }
+    }
+`);
+
 export const GetProductReviewsQuery = graphql(`
     query GetProductReviews($slug: String!, $skip: Int, $take: Int) {
         product(slug: $slug) {

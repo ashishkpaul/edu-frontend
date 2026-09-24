@@ -196,6 +196,19 @@ src/
 └── i18n/                      # next-intl internationalization
 ```
 
+### Tenant Theming (ADR-043 L1)
+
+A tenant's published `TenantTheme` is rendered as CSS custom properties by
+`components/providers/tenant-theme-style.tsx`, resolved through
+`lib/vendure/tenant-theme.ts` and mapped by `lib/tenant-theme-css.ts` (pure, dependency-free).
+
+- **The backend decides everything commercial.** `myTenantTheme` is `Permission.Public` but entitlement-conditional: it returns `null` unless the channel has an active theme **and** its plan grants `whitelabelEnabled` (ADR-043 / INV-025). The storefront never re-derives that — `null` means "render the platform defaults already defined in `globals.css`".
+- **Only tenant-hostname requests get a theme.** A theme is resolved only when the request carries the proxy-set `x-saa9vi-channel-token`. The marketplace vhost deliberately sends no channel token, so no tenant theme can reach the marketplace surface, the admin portal, or another tenant (ADR-043). Direct/dev requests behave the same way.
+- **Presentation only.** The mapper writes `--primary`, `--secondary`, `--accent`, `--background`, `--foreground` and `--font-sans`, plus a computed `*-foreground` for readability. Every tenant-supplied value is allowlist-validated, so a theme cannot terminate a declaration or inject a rule; a theme whose values all fail validation yields no style at all (platform defaults apply).
+- **Caching.** Cached per channel×locale under the tag `tenant-theme-<channelToken>-<locale>` (`cacheLife('hours')`). Purge by POSTing `tenant-theme-<channelToken>` to `/api/revalidate` — the route expands it per locale via its `TAG_RULES` entry.
+- **Failure behaviour.** A failed theme read is logged (`[tenant-theme] theme read failed`) and degrades to platform defaults rather than failing the page: theming is presentational and cannot weaken tenant isolation, since tenant identity is established at the proxy (see the trust-boundary notes above) and enforced by the channel-scoped data reads.
+- **Not yet consumed:** `logoAssetId` and `displayName` are fetched but navbar/footer branding is still static; ADR-043 L2 (layout presets) and L3 (custom CSS) are unbuilt.
+
 ## API Routes
 
 ### `GET /api/resolve-channel?hostname=...`
