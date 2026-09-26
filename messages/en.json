@@ -44,7 +44,7 @@
     "usageUnlimited": "Unlimited live minutes for this period",
     "usagePeriod": "Period: {start} – {end}",
     "plansHeading": "Available plans",
-    "plansIntro": "Choose a plan for your academy. Provider-backed changes may require payment authorization before the new plan becomes active.",,
+    "plansIntro": "Choose a plan for your academy. Provider-backed changes may require payment authorization before the new plan becomes active.",
     "currentPlan": "Your current plan",
     "perMonth": "/ month",
     "bbbMinutes": "{minutes} live teaching minutes / month",

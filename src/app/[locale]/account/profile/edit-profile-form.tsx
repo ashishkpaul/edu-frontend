@@ -1,12 +1,12 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { updateCustomerAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {useTranslations} from 'next-intl';
+import { useTranslations } from 'next-intl';
 
 interface EditProfileFormProps {
     customer: {
@@ -17,14 +17,14 @@ interface EditProfileFormProps {
 
 export function EditProfileForm({ customer }: EditProfileFormProps) {
     const t = useTranslations('Account');
+    const [firstName, setFirstName] = useState(customer?.firstName ?? '');
+    const [lastName, setLastName] = useState(customer?.lastName ?? '');
     const [state, formAction, isPending] = useActionState(updateCustomerAction, undefined);
 
     useEffect(() => {
-        if (state?.success) {
-            const form = document.getElementById('edit-profile-form') as HTMLFormElement;
-            form?.reset();
-        }
-    }, [state?.success]);
+        setFirstName(customer?.firstName ?? '');
+        setLastName(customer?.lastName ?? '');
+    }, [customer?.firstName, customer?.lastName]);
 
     return (
         <Card>
@@ -43,7 +43,8 @@ export function EditProfileForm({ customer }: EditProfileFormProps) {
                             name="firstName"
                             type="text"
                             placeholder="John"
-                            defaultValue={customer?.firstName || ''}
+                            value={firstName}
+                            onValueChange={setFirstName}
                             required
                             disabled={isPending}
                         />
@@ -55,7 +56,8 @@ export function EditProfileForm({ customer }: EditProfileFormProps) {
                             name="lastName"
                             type="text"
                             placeholder="Doe"
-                            defaultValue={customer?.lastName || ''}
+                            value={lastName}
+                            onValueChange={setLastName}
                             required
                             disabled={isPending}
                         />
