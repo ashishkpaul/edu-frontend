@@ -44,7 +44,7 @@
     "usageUnlimited": "Unbegrenzte Live-Minuten in diesem Zeitraum",
     "usagePeriod": "Zeitraum: {start} – {end}",
     "plansHeading": "Verfügbare Pläne",
-    "plansIntro": "Der Plan-Katalog dieser Plattform. Diese Seite ist nur zum Ansehen; Planänderungen werden mit dem Plattform-Team abgestimmt.",
+    "plansIntro": "Wählen Sie einen Plan für Ihre Akademie. Bei Änderungen an kostenpflichtigen Plänen kann vor der Aktivierung eine Zahlungsautorisierung erforderlich sein.",,
     "currentPlan": "Ihr aktueller Plan",
     "perMonth": "/ Monat",
     "bbbMinutes": "{minutes} Live-Unterrichtsminuten / Monat",
@@ -52,7 +52,18 @@
     "customDomain": "Eigene Domain",
     "whitelabel": "White-Label",
     "marketplaceListing": "Marktplatz-Listing",
-    "noPlans": "Zurzeit sind keine Pläne gelistet."
+    "noPlans": "Zurzeit sind keine Pläne gelistet.",
+    "changeToPlan": "Zu {name} wechseln",
+    "changingPlan": "Wird verarbeitet...",
+    "changeRequested": "Planänderung angefordert. Folgen Sie dem Zahlungsautorisierungsschritt, falls einer angezeigt wird.",
+    "cancelAtPeriodEnd": "Zum Periodenende kündigen",
+    "cancelImmediately": "Sofort kündigen",
+    "cancelling": "Wird gekündigt...",
+    "cancellationPending": "Die Kündigung ist zum Ende des aktuellen Abrechnungszeitraums geplant.",
+    "cancellationScheduled": "Die Kündigung ist zum Ende des aktuellen Abrechnungszeitraums geplant.",
+    "cancelled": "Abonnement gekündigt.",
+    "cancelAtPeriodEndConfirm": "Dieses Abonnement zum Ende des aktuellen Abrechnungszeitraums kündigen?",
+    "cancelImmediatelyConfirm": "Dieses Abonnement sofort kündigen? Der Zugriff kann jetzt enden."
   },
   "Hero": {
     "title": "Entdecke hochwertige",

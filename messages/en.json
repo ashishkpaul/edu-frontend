@@ -44,7 +44,7 @@
     "usageUnlimited": "Unlimited live minutes for this period",
     "usagePeriod": "Period: {start} – {end}",
     "plansHeading": "Available plans",
-    "plansIntro": "The plan catalogue available on this platform. This page is read-only; plan changes are arranged with the platform team.",
+    "plansIntro": "Choose a plan for your academy. Provider-backed changes may require payment authorization before the new plan becomes active.",,
     "currentPlan": "Your current plan",
     "perMonth": "/ month",
     "bbbMinutes": "{minutes} live teaching minutes / month",
@@ -52,7 +52,18 @@
     "customDomain": "Custom domain",
     "whitelabel": "White-label",
     "marketplaceListing": "Marketplace listing",
-    "noPlans": "No plans are currently listed."
+    "noPlans": "No plans are currently listed.",
+    "changeToPlan": "Change to {name}",
+    "changingPlan": "Processing...",
+    "changeRequested": "Plan change requested. Follow the payment authorization step if shown.",
+    "cancelAtPeriodEnd": "Cancel at period end",
+    "cancelImmediately": "Cancel immediately",
+    "cancelling": "Cancelling...",
+    "cancellationPending": "Cancellation is scheduled for the end of the current billing period.",
+    "cancellationScheduled": "Cancellation scheduled for the end of the current billing period.",
+    "cancelled": "Subscription cancelled.",
+    "cancelAtPeriodEndConfirm": "Cancel this subscription at the end of the current billing period?",
+    "cancelImmediatelyConfirm": "Cancel this subscription immediately? Access may end now."
   },
   "Hero": {
     "title": "Discover Quality",
