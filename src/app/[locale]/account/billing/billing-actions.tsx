@@ -81,7 +81,6 @@ export default function BillingActions({ plans, subscription }: BillingActionsPr
 
     const canChange =
         subscription.status !== 'cancelled' &&
-        subscription.status !== 'past_due' &&
         subscription.status !== 'pending_provider_auth';
 
     return (
