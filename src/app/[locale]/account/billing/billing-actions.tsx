@@ -12,7 +12,6 @@ import {
 interface BillingPlan {
     id: string;
     name: string;
-    monthlyPriceInPaise: number;
 }
 
 interface BillingSubscription {
