@@ -577,3 +577,44 @@ export const DeleteMyAccountMutation = graphql(`
         }
     }
 `);
+
+
+export const RequestMySubscriptionPlanChangeMutation = graphql(`
+    mutation RequestMySubscriptionPlanChange($planId: ID!) {
+        requestMySubscriptionPlanChange(planId: $planId) {
+            subscription {
+                plan {
+                    id
+                    name
+                }
+                status
+                currentPeriodStart
+                currentPeriodEnd
+                cancelAtPeriodEnd
+                cancelledAt
+                marketplaceEligible
+            }
+            authorizationUrl
+        }
+    }
+`);
+
+export const CancelMySubscriptionMutation = graphql(`
+    mutation CancelMySubscription($atPeriodEnd: Boolean = true) {
+        cancelMySubscription(atPeriodEnd: $atPeriodEnd) {
+            subscription {
+                plan {
+                    id
+                    name
+                }
+                status
+                currentPeriodStart
+                currentPeriodEnd
+                cancelAtPeriodEnd
+                cancelledAt
+                marketplaceEligible
+            }
+            authorizationUrl
+        }
+    }
+`);
