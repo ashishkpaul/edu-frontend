@@ -5,6 +5,7 @@ import {getAuthToken} from '@/lib/auth';
 import {redirect} from 'next/navigation';
 import {getTranslations} from 'next-intl/server';
 import {Check} from 'lucide-react';
+import BillingActions from './billing-actions';
 
 // ─── Display-only shapes: explicit projections of the slice-8 §3.5 contract ──
 
@@ -160,6 +161,15 @@ export default async function BillingPage() {
                                 })}
                             </p>
                         )}
+
+                        <BillingActions
+                            plans={plans.map((plan) => ({
+                                id: plan.id,
+                                name: plan.name,
+                                monthlyPriceInPaise: plan.monthlyPriceInPaise,
+                            }))}
+                            subscription={subscription}
+                        />
                     </div>
                 )}
 
