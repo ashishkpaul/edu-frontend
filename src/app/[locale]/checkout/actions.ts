@@ -7,6 +7,7 @@ import {
     SetOrderShippingMethodMutation,
     AddPaymentToOrderMutation,
     CreateCustomerAddressMutation,
+    CreateRazorpayCheckoutOrderMutation,
     TransitionOrderToStateMutation,
     SetCustomerForOrderMutation,
 } from '@/lib/vendure/mutations';
@@ -101,7 +102,25 @@ export async function transitionToArrangingPayment() {
     revalidatePath(`/${locale}/checkout`);
 }
 
-export async function placeOrder(paymentMethodCode: string) {
+export type PlaceOrderResult =
+    | { kind: 'placed'; orderCode: string }
+    | {
+          kind: 'coupon-removed';
+          message: string;
+          removedCouponCodes: string[];
+          previousTotalWithTax: number;
+          newTotalWithTax: number;
+      }
+    | { kind: 'error'; errorCode: string; message: string };
+
+export interface RazorpayCheckoutOrderHandle {
+    razorpayOrderId: string;
+    amountMinor: number;
+    currency: string;
+    keyId: string;
+}
+
+export async function placeOrder(paymentMethodCode: string): Promise<PlaceOrderResult> {
     // First, transition the order to ArrangingPayment state
     await transitionToArrangingPayment();
 
@@ -115,6 +134,13 @@ export async function placeOrder(paymentMethodCode: string) {
         metadata.shouldErrorOnSettle = false;
     }
 
+    // Razorpay one-time checkout carries no client metadata here: the browser
+    // handshake (razorpay_order_id / payment_id / signature) is submitted by
+    // settleRazorpayPayment AFTER Razorpay Checkout.js authorizes the payment.
+    if (paymentMethodCode === 'razorpay') {
+        return { kind: 'error', errorCode: 'RAZORPAY_HANDSHAKE_REQUIRED', message: 'Razorpay payments must go through the Razorpay checkout flow.' };
+    }
+
     // Add payment to the order
     const result = await mutate(
         AddPaymentToOrderMutation,
@@ -124,24 +150,103 @@ export async function placeOrder(paymentMethodCode: string) {
                 metadata,
             },
         },
-        {useAuthToken: true}
+        { useAuthToken: true }
     );
 
-    if (result.data.addPaymentToOrder.__typename !== 'Order') {
-        const errorResult = result.data.addPaymentToOrder;
-        throw new Error(
-            `Failed to place order: ${errorResult.errorCode} - ${errorResult.message}`
-        );
+    const payload = result.data.addPaymentToOrder;
+    if (payload.__typename === 'Order') {
+        const orderCode = payload.code;
+
+        // Update the cart tag to immediately invalidate cached cart data
+        updateTag('cart');
+        updateTag('active-order');
+
+        const locale = await getLocale();
+        redirect({ href: `/order-confirmation/${orderCode}`, locale });
     }
 
-    const orderCode = result.data.addPaymentToOrder.code;
+    if (payload.__typename === 'CouponRemovedDuringCheckoutError') {
+        const locale = await getLocale();
+        revalidatePath(`/${locale}/checkout`);
+        return {
+            kind: 'coupon-removed',
+            message: payload.message,
+            removedCouponCodes: [...payload.removedCouponCodes],
+            previousTotalWithTax: payload.previousTotalWithTax,
+            newTotalWithTax: payload.newTotalWithTax,
+        };
+    }
 
-    // Update the cart tag to immediately invalidate cached cart data
-    updateTag('cart');
-    updateTag('active-order');
+    return {
+        kind: 'error',
+        errorCode: 'errorCode' in payload ? String(payload.errorCode) : 'UNKNOWN',
+        message: 'message' in payload ? String(payload.message) : 'Failed to place order',
+    };
+}
 
-    const locale = await getLocale();
-    redirect({href: `/order-confirmation/${orderCode}`, locale});
+export async function createRazorpayCheckoutOrderAction(): Promise<RazorpayCheckoutOrderHandle> {
+    // Must run AFTER transitionToArrangingPayment so the backend order total is
+    // final; the Razorpay order amount binds to that total server-side.
+    await transitionToArrangingPayment();
+    const result = await mutate(CreateRazorpayCheckoutOrderMutation, {}, { useAuthToken: true });
+    const handle = result.data.createRazorpayCheckoutOrder;
+    if (!handle?.razorpayOrderId) {
+        throw new Error('Failed to create Razorpay checkout order');
+    }
+    return {
+        razorpayOrderId: handle.razorpayOrderId,
+        amountMinor: handle.amountMinor,
+        currency: handle.currency,
+        keyId: handle.keyId,
+    };
+}
+
+export async function settleRazorpayPayment(input: {
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+}): Promise<PlaceOrderResult> {
+    const result = await mutate(
+        AddPaymentToOrderMutation,
+        {
+            input: {
+                method: 'razorpay',
+                metadata: {
+                    razorpay_order_id: input.razorpayOrderId,
+                    razorpay_payment_id: input.razorpayPaymentId,
+                    razorpay_signature: input.razorpaySignature,
+                },
+            },
+        },
+        { useAuthToken: true }
+    );
+
+    const payload = result.data.addPaymentToOrder;
+    if (payload.__typename === 'Order') {
+        const orderCode = payload.code;
+        updateTag('cart');
+        updateTag('active-order');
+        const locale = await getLocale();
+        redirect({ href: `/order-confirmation/${orderCode}`, locale });
+    }
+
+    if (payload.__typename === 'CouponRemovedDuringCheckoutError') {
+        const locale = await getLocale();
+        revalidatePath(`/${locale}/checkout`);
+        return {
+            kind: 'coupon-removed',
+            message: payload.message,
+            removedCouponCodes: [...payload.removedCouponCodes],
+            previousTotalWithTax: payload.previousTotalWithTax,
+            newTotalWithTax: payload.newTotalWithTax,
+        };
+    }
+
+    return {
+        kind: 'error',
+        errorCode: 'errorCode' in payload ? String(payload.errorCode) : 'UNKNOWN',
+        message: 'message' in payload ? String(payload.message) : 'Failed to place order',
+    };
 }
 
 interface GuestCustomerInput {

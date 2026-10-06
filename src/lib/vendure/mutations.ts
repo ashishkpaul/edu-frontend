@@ -291,10 +291,28 @@ export const AddPaymentToOrderMutation = graphql(`
                     state
                 }
             }
+            ... on CouponRemovedDuringCheckoutError {
+                errorCode
+                message
+                removedCouponCodes
+                previousTotalWithTax
+                newTotalWithTax
+            }
             ... on ErrorResult {
                 errorCode
                 message
             }
+        }
+    }
+`);
+
+export const CreateRazorpayCheckoutOrderMutation = graphql(`
+    mutation CreateRazorpayCheckoutOrder($orderId: ID) {
+        createRazorpayCheckoutOrder(orderId: $orderId) {
+            razorpayOrderId
+            amountMinor
+            currency
+            keyId
         }
     }
 `);

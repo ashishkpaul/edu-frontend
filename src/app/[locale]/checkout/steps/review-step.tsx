@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, Truck, CreditCard, Edit, Mail } from 'lucide-react';
 import { useCheckout } from '../checkout-provider';
-import { placeOrder as placeOrderAction } from '../actions';
+import { placeOrder as placeOrderAction, type PlaceOrderResult } from '../actions';
+import { useRouter } from '@/i18n/navigation';
 import { Price } from '@/components/commerce/price';
 import {useTranslations} from 'next-intl';
 
@@ -16,6 +17,9 @@ export default function ReviewStep({ onEditStep }: ReviewStepProps) {
   const t = useTranslations('Checkout');
   const { order, paymentMethods, selectedPaymentMethodCode, isGuest } = useCheckout();
   const [loading, setLoading] = useState(false);
+  const [couponNotice, setCouponNotice] = useState<Extract<PlaceOrderResult, { kind: 'coupon-removed' }> | null>(null);
+  const [placeError, setPlaceError] = useState<string | null>(null);
+  const router = useRouter();
 
   const selectedPaymentMethod = paymentMethods.find(
     (method) => method.code === selectedPaymentMethodCode
@@ -25,13 +29,37 @@ export default function ReviewStep({ onEditStep }: ReviewStepProps) {
     if (!selectedPaymentMethodCode) return;
 
     setLoading(true);
+    setCouponNotice(null);
+    setPlaceError(null);
     try {
-      await placeOrderAction(selectedPaymentMethodCode);
+      // Razorpay one-time checkout bypasses addPaymentToOrder here: it
+      // opens Razorpay Checkout.js from the payment step instead.
+      if (selectedPaymentMethodCode === 'razorpay') {
+        onEditStep('payment');
+        setLoading(false);
+        return;
+      }
+      const outcome = await placeOrderAction(selectedPaymentMethodCode);
+      if (outcome.kind === 'coupon-removed') {
+        // Totals changed server-side: refresh the order snapshot (the
+        // server action already revalidated /checkout) and show which
+        // coupons were dropped plus the corrected total.
+        setCouponNotice(outcome);
+        router.refresh();
+        setLoading(false);
+        return;
+      }
+      if (outcome.kind === 'error') {
+        setPlaceError(`${outcome.errorCode} - ${outcome.message}`);
+        setLoading(false);
+        return;
+      }
     } catch (error) {
       if (error instanceof Error && error.message.includes('NEXT_REDIRECT')) {
         throw error;
       }
       console.error('Error placing order:', error);
+      setPlaceError(error instanceof Error ? error.message : 'Failed to place order');
       setLoading(false);
     }
   };
@@ -160,6 +188,24 @@ export default function ReviewStep({ onEditStep }: ReviewStepProps) {
           )}
         </div>
       </div>
+
+      {couponNotice && (
+        <div role="alert" className="rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-sm">
+          <p className="font-medium">Some coupons were removed at checkout</p>
+          <p className="text-muted-foreground mt-1">
+            {couponNotice.removedCouponCodes.join(', ')} no longer {couponNotice.removedCouponCodes.length === 1 ? 'applies' : 'apply'}; the order total was updated from{' '}
+            <Price value={couponNotice.previousTotalWithTax} currencyCode={order.currencyCode} /> to{' '}
+            <Price value={couponNotice.newTotalWithTax} currencyCode={order.currencyCode} />. Review the updated total, then place your order again.
+          </p>
+        </div>
+      )}
+
+      {placeError && (
+        <div role="alert" className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm">
+          <p className="font-medium">Could not place your order</p>
+          <p className="text-muted-foreground mt-1">{placeError}</p>
+        </div>
+      )}
 
       <Button
         onClick={handlePlaceOrder}
