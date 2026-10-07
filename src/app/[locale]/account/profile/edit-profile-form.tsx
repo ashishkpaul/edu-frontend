@@ -44,7 +44,7 @@ export function EditProfileForm({ customer }: EditProfileFormProps) {
                             type="text"
                             placeholder="John"
                             value={firstName}
-                            onValueChange={setFirstName}
+                            onChange={(e) => setFirstName(e.target.value)}
                             required
                             disabled={isPending}
                         />
@@ -57,7 +57,7 @@ export function EditProfileForm({ customer }: EditProfileFormProps) {
                             type="text"
                             placeholder="Doe"
                             value={lastName}
-                            onValueChange={setLastName}
+                            onChange={(e) => setLastName(e.target.value)}
                             required
                             disabled={isPending}
                         />
