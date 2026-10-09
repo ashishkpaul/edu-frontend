@@ -552,6 +552,20 @@ export const GetBbbRoomStatusQuery = graphql(`
             name
             state
             currentMeetingId
+            classAction
+        }
+    }
+`);
+
+// ─── Room card (server-driven class action, INV-008) ──────────────────────
+// The storefront renders `classAction` (START | JOIN | WAIT | NONE); it never
+// re-derives role or eligibility from the clock or from the room state.
+export const GetMyBbbRoomsQuery = graphql(`
+    query GetMyBbbRooms {
+        myBbbRooms {
+            id
+            name
+            state
         }
     }
 `);
