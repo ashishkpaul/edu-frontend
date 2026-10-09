@@ -14,6 +14,10 @@ export default createMiddleware(routing);
 
 export const config = {
     matcher: [
-        '/((?!api|_next/static|_next/image|favicon.ico|assets|images|icons|.*\\.svg).*)',
+        // `bbb-logout` is excluded: BigBlueButton is given a locale-less
+        // `${STOREFRONT_URL}/bbb-logout`, and it must reach the root Route
+        // Handler (which clears the session cookie) instead of being
+        // redirected to a `[locale]/bbb-logout` route that does not exist.
+        '/((?!api|bbb-logout|_next/static|_next/image|favicon.ico|assets|images|icons|.*\\.svg).*)',
     ],
 };

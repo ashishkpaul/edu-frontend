@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { joinRoomAction } from './actions';
-import type { ClassAction, RoomCard } from './rooms-types';
+import type { RoomCard } from './rooms-types';
 
 // ─── Labels ─────────────────────────────────────────────────────────────────
 // Server-driven: the backend tells us WHICH action applies (INV-008); the copy
