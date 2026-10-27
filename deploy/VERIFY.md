@@ -112,3 +112,33 @@ curl -si 'http://localhost:3001/api/resolve-channel?hostname=localhost' | head -
 All three responses carry `x-saa9vi-channel-token` (empty on the non-mapped
 cases). If the mapped-probe 200s but §2's proxied request 200s too, the proxy is
 dropping the denial — re-check the proxy's status handling, not the route.
+
+## 7. Confirm Saa9vi-hosted seller subdomains are retired
+
+Platform-provided seller hosts such as `apex-academy.saa9vi.com` must not
+render a seller storefront, even if an old Redis mapping is still present.
+
+1. Confirm the active DNS configuration has no wildcard record used for
+   seller storefronts under `saa9vi.com`, and the active Caddy/Nginx config has
+   no wildcard or catch-all seller storefront vhost/on-demand-TLS policy.
+2. With Redis up, probe the old hostname through the public edge. Expect a
+   rejected or unserved response (for example, no matching virtual host or a
+   `403`), never an academy storefront and never another tenant's products.
+3. Probe the resolver directly after cleanup:
+
+   ```bash
+   curl -si 'http://localhost:3001/api/resolve-channel?hostname=apex-academy.saa9vi.com' | head -1
+   ```
+
+   Expect `403` once the legacy mapping has been removed. If it returns
+   `200` with a token, stop and inspect that exact Redis key before rollout.
+4. Inventory and remove only confirmed legacy generated keys such as
+   `channel-token:apex-academy.saa9vi.com`. Do not delete all
+   `channel-token:*` entries: seller-owned custom-domain mappings must remain.
+5. Repeat the legitimate custom-domain and header-spoofing checks in §§1–3.
+   Custom domains must still resolve to their correct Channel, and the proxy
+   must continue overwriting any client-supplied channel-token header.
+
+This check is a retirement acceptance test, not a request to change
+`/api/resolve-channel` to allow unknown seller hosts. Unknown public hosts
+must continue to be rejected when Redis is healthy and has no mapping.
