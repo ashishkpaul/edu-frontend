@@ -23,9 +23,10 @@
 # storefront. A Redis *outage* still returns 200 + '' (the site keeps serving
 # against the env-var fallback, VERIFY.md §3).
 #
-# Update the site addresses below to your actual academy domains, or use
-# a wildcard/on-demand TLS block if you're provisioning academies
-# dynamically — see https://caddyserver.com/docs/automatic-https#on-demand-tls
+# Configure only explicit seller-owned custom domains here. Do NOT add
+# *.saa9vi.com wildcard/on-demand-TLS routing for Saa9vi-hosted seller stores:
+# platform-provided seller subdomains have been retired. Keep platform-owned
+# hosts (marketplace, admin, API) in their own explicit virtual hosts.
 
 academy-a.example.com, academy-b.example.com {
 	# 1. Resolve the incoming Host header to a channel token by calling
